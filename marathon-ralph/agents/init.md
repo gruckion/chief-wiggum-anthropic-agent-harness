@@ -148,7 +148,7 @@ If this is a new project with no existing code (empty directory or only spec fil
 
 3. **Report summary**:
 
-   ```
+   ```markdown
    Marathon Initialization Complete
 
    Project: <project_name>

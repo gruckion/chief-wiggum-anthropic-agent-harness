@@ -19,7 +19,7 @@ Look for Linear MCP tools by checking if `mcp__linear__*` tools are available. Y
 
 Provide these setup instructions:
 
-```
+```markdown
 Linear MCP is not connected. To set up:
 
 1. Add Linear MCP server:
@@ -63,7 +63,7 @@ If Linear is connected and authenticated:
 
 **On Success:**
 
-```
+```markdown
 Marathon Ralph Setup Complete
 
 Linear MCP: Connected and authenticated
@@ -75,7 +75,7 @@ Ready to proceed with marathon initialization.
 
 **On Failure:**
 
-```
+```markdown
 Marathon Ralph Setup Failed
 
 Issue: <specific issue>

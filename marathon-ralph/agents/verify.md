@@ -167,7 +167,7 @@ If ANY verification check fails:
 
 3. **Report failure:**
 
-   ```
+   ```markdown
    Verification Failed
 
    Check: <failed check>
@@ -184,7 +184,7 @@ If ANY verification check fails:
 
 If all checks pass:
 
-```
+```markdown
 Verification Passed
 
 Tests: PASS (X unit, Y integration, Z e2e)

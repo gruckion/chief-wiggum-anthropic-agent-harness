@@ -42,7 +42,7 @@ If this is NOT a web project:
 
 **Report and exit:**
 
-```
+```markdown
 Skipping E2E: not a web project
 
 Reason: [No web framework detected / CLI tool / API-only backend / etc.]

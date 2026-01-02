@@ -44,7 +44,7 @@ Use Glob and Grep to understand the project:
 
 1. **Find related files:**
 
-   ```
+   ```markdown
    # Find files related to the feature
    Glob: **/*<feature-keyword>*
    Grep: <relevant terms>
