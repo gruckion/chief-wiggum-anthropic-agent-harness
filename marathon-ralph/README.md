@@ -18,9 +18,16 @@ Marathon Ralph extends the [Chief Wiggum](../chief-wiggum/) iterative developmen
 
 Marathon Ralph requires the Linear MCP server to be configured:
 
-1. Install the Linear MCP server
-2. Configure your Linear API token
-3. Ensure you can query Linear issues via MCP
+1. Add Linear MCP server:
+   ```bash
+   claude mcp add --transport http linear https://mcp.linear.app/mcp
+   ```
+
+2. Authenticate via OAuth:
+   ```
+   /mcp
+   # Select Linear → Authenticate → Complete browser OAuth flow
+   ```
 
 ## Quick Start
 

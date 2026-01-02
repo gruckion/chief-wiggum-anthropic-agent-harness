@@ -5,7 +5,7 @@ allowed-tools: ["Bash", "Read"]
 
 # Marathon Ralph Status
 
-Check the current marathon session status.
+Check the current marathon session status with live data from Linear.
 
 ## Process
 
@@ -64,6 +64,22 @@ Linear project and issues are being created from the specification.
 
 #### Phase: coding
 
+When in coding phase, query Linear for real-time status:
+
+1. **Query Linear for issue counts** using Linear MCP tools:
+   - Get all issues in the project
+   - Count by status: Done, In Progress, Todo/Backlog
+   - Identify the current issue being worked on (In Progress status)
+
+2. **Query META issue for recent activity**:
+   - Read comments from the META issue (`linear.meta_issue_id`)
+   - Show last 3-5 session notes
+
+3. **Calculate progress**:
+   - Progress percentage = (completed / total_issues) * 100
+
+4. **Display status**:
+
 ```
 Marathon Ralph Status
 ---------------------
@@ -74,12 +90,19 @@ Spec File: <spec_file>
 Linear Project: <linear.project_name> (<linear.team_name>)
 Meta Issue: <linear.meta_issue_id>
 
+Progress: [=========>          ] 45% (14/31 issues)
+
+Issue Breakdown:
+  Done:        14
+  In Progress: 1
+  Todo:        16
+
 Current Issue: <current_issue.id> - <current_issue.title>
 
-Progress:
-  Completed: <stats.completed>/<linear.total_issues>
-  In Progress: <stats.in_progress>
-  Todo: <stats.todo>
+Recent Activity (from META issue):
+  [2025-01-02 14:30] Completed ABC-14: User authentication
+  [2025-01-02 12:15] Completed ABC-13: Database schema
+  [2025-01-02 10:00] Started session, resumed from ABC-12
 
 Started: <created_at>
 Last Updated: <last_updated>
@@ -123,6 +146,28 @@ Status: <active ? "Active" : "Inactive">
 Note: Some state information is incomplete.
 ```
 
+### Step 5: Linear Query Instructions (for coding phase)
+
+When in coding phase, use Linear MCP tools to get live data:
+
+1. **Get project issues**:
+   - Use available Linear MCP tools to query issues by project
+   - Look for tools like `mcp__linear__get_issues`, `mcp__linear__search_issues`, or similar
+   - Filter by project ID from state file
+
+2. **Count by status**:
+   - Done/Completed status
+   - In Progress status
+   - Todo/Backlog/Open status
+
+3. **Get META issue comments**:
+   - Query comments on the META issue for session history
+   - Display most recent entries
+
+4. **Identify current issue**:
+   - Look for issue with "In Progress" status
+   - If multiple, show the one with highest priority or most recent update
+
 ## State File Schema Reference
 
 ```json
@@ -151,3 +196,26 @@ Note: Some state information is incomplete.
   "last_updated": "2025-01-02T14:45:00Z"
 }
 ```
+
+## Progress Bar Rendering
+
+Calculate and render a visual progress bar:
+
+```
+Progress: [===========>        ] 55% (17/31 issues)
+```
+
+- Total width: 20 characters
+- Filled characters: floor(percentage / 5)
+- Arrow at the end of filled section
+- Empty characters: remaining space
+
+Example calculation for 55%:
+- Filled = floor(55 / 5) = 11 characters
+- Display: `[===========>        ]`
+
+## Error Handling
+
+- If state file is corrupted JSON: Report parsing error, suggest checking file
+- If Linear MCP unavailable in coding phase: Show cached stats from state file with note
+- If Linear query fails: Fall back to state file data with warning
