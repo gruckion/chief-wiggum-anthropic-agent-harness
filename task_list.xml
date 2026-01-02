@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<task-list>
+  <metadata>
+    <project>marathon-ralph</project>
+    <description>Incremental build plan for marathon-ralph Claude Code plugin</description>
+    <created>2026-01-02</created>
+    <based-on>plan_v3.md</based-on>
+  </metadata>
+
+  <!--
+    GUIDING PRINCIPLES:
+    1. Each group produces a functional (testable) plugin
+    2. Groups are ordered by dependency and value
+    3. Smallest possible increments for rapid feedback
+    4. Test after each group before committing
+  -->
+
+  <group id="1" name="Minimal Viable Plugin">
+    <description>
+      Create the bare minimum to load as a CC plugin with one working command.
+      After this group: Plugin loads, /marathon-ralph:status returns "No active marathon"
+    </description>
+    <tasks>
+      <task id="1.1">
+        <name>Update plugin.json with complete metadata</name>
+        <file>marathon-ralph/.claude-plugin/plugin.json</file>
+        <details>
+          Add: description, keywords, version following marketplace standards.
+          Reference: chief-wiggum/.claude-plugin/plugin.json
+        </details>
+      </task>
+      <task id="1.2">
+        <name>Create marketplace.json for proper registration</name>
+        <file>marathon-ralph/.claude-plugin/marketplace.json</file>
+        <details>
+          Add JSON schema, owner info, plugins array with category.
+          Reference: chief-wiggum/.claude-plugin/marketplace.json
+        </details>
+      </task>
+      <task id="1.3">
+        <name>Create status command (minimal version)</name>
+        <file>marathon-ralph/commands/status.md</file>
+        <details>
+          YAML frontmatter with description.
+          Check for .claude/marathon-ralph.json
+          If not found: "No active marathon"
+          If found: Display basic state info
+          Reference: plan_v3.md lines 741-782, chief-wiggum command patterns
+        </details>
+      </task>
+      <task id="1.4">
+        <name>Create README.md with basic usage</name>
+        <file>marathon-ralph/README.md</file>
+        <details>
+          Overview, prerequisites (Linear MCP), quick start.
+          Reference: chief-wiggum/README.md
+        </details>
+      </task>
+    </tasks>
+    <test-criteria>
+      - Plugin loads with: claude --plugin-dir ./marathon-ralph
+      - /marathon-ralph:status returns "No active marathon" message
+    </test-criteria>
+  </group>
+
+  <group id="2" name="State Management + Setup Verification">
+    <description>
+      Add setup-agent to verify Linear MCP connection and establish state file patterns.
+      After this group: Can verify Linear is connected and create initial state file.
+    </description>
+    <tasks>
+      <task id="2.1">
+        <name>Create setup-agent</name>
+        <file>marathon-ralph/agents/setup.md</file>
+        <details>
+          Model: haiku (fast checks)
+          Tools: Read, Bash, Glob
+          1. Check for mcp__linear__* tools
+          2. Test Linear connectivity
+          3. Provide setup instructions if not connected
+          4. Create .claude/marathon-ralph.json with phase: "setup"
+          Reference: plan_v3.md lines 123-165
+        </details>
+      </task>
+      <task id="2.2">
+        <name>Create start command (setup-only version)</name>
+        <file>marathon-ralph/commands/start.md</file>
+        <details>
+          YAML frontmatter with description and argument-hint for spec-file
+          Parse --spec-file argument
+          Run setup-agent to verify Linear
+          Create initial state file structure
+          Reference: plan_v3.md lines 689-739
+        </details>
+      </task>
+      <task id="2.3">
+        <name>Update status command to read real state</name>
+        <file>marathon-ralph/commands/status.md</file>
+        <details>
+          Read .claude/marathon-ralph.json
+          Display phase, spec_file, linear info if available
+          Handle all phases: setup, init, coding, complete
+        </details>
+      </task>
+    </tasks>
+    <test-criteria>
+      - /marathon-ralph:start --spec-file test.md runs setup-agent
+      - If Linear MCP not connected, shows clear instructions
+      - If connected, creates .claude/marathon-ralph.json with phase: "setup"
+      - /marathon-ralph:status shows current state
+    </test-criteria>
+  </group>
+
+  <group id="3" name="Linear Project Initialization">
+    <description>
+      Add init-agent to create Linear project and issues from spec file.
+      After this group: Can read spec, create Linear project with issues.
+    </description>
+    <tasks>
+      <task id="3.1">
+        <name>Create init-agent</name>
+        <file>marathon-ralph/agents/init.md</file>
+        <details>
+          Model: opus (complex analysis)
+          Tools: Read, Write, Edit, Glob, Grep, Bash + mcp__linear__*
+          1. Read spec file
+          2. Query Linear for teams (handle multiple)
+          3. Create Linear project
+          4. Break spec into prioritized issues (P0-P3)
+          5. Create META issue for tracking
+          6. For greenfield: discuss framework, generate init.sh, CLAUDE.md
+          7. Initialize git if needed
+          8. Update state file with Linear metadata
+          Reference: plan_v3.md lines 169-257
+        </details>
+      </task>
+      <task id="3.2">
+        <name>Update start command to run init-agent</name>
+        <file>marathon-ralph/commands/start.md</file>
+        <details>
+          After setup-agent succeeds:
+          - Run init-agent with spec file path
+          - Update state to phase: "init" then "coding"
+          Handle resume case (existing state with phase: "coding")
+        </details>
+      </task>
+      <task id="3.3">
+        <name>Update status command for Linear integration</name>
+        <file>marathon-ralph/commands/status.md</file>
+        <details>
+          Query Linear for issue counts (Done, In Progress, Todo)
+          Show current issue being worked on
+          Calculate progress percentage
+          Display recent activity from META issue
+        </details>
+      </task>
+    </tasks>
+    <test-criteria>
+      - /marathon-ralph:start --spec-file spec.md creates Linear project
+      - Issues are created with proper structure (title, description, acceptance criteria)
+      - META issue created for tracking
+      - State file updated with Linear IDs
+      - /marathon-ralph:status shows accurate Linear counts
+    </test-criteria>
+  </group>
+
+  <group id="4" name="Core Coding Loop">
+    <description>
+      Add verify, plan, and code agents for the main development workflow.
+      After this group: Can pick up issues and implement features (without tests).
+    </description>
+    <tasks>
+      <task id="4.1">
+        <name>Create verify-agent</name>
+        <file>marathon-ralph/agents/verify.md</file>
+        <details>
+          Model: sonnet
+          Tools: Read, Bash, Glob, Grep
+          1. Detect project type from package.json/pyproject.toml
+          2. Run unit tests, integration tests, E2E tests
+          3. Run linter and type checker
+          4. On failure: create NEW bug issue in Linear (not reopen)
+          5. Return structured status report
+          Reference: plan_v3.md lines 261-342
+        </details>
+      </task>
+      <task id="4.2">
+        <name>Create plan-agent</name>
+        <file>marathon-ralph/agents/plan.md</file>
+        <details>
+          Model: sonnet
+          Tools: Read, Glob, Grep
+          1. Read issue from Linear
+          2. Explore codebase for related files
+          3. Create step-by-step implementation plan
+          4. Document assumptions as Linear comment
+          5. Output structured plan
+          Reference: plan_v3.md lines 346-440
+        </details>
+      </task>
+      <task id="4.3">
+        <name>Create code-agent</name>
+        <file>marathon-ralph/agents/code.md</file>
+        <details>
+          Model: sonnet
+          Tools: Read, Write, Edit, Glob, Grep, Bash
+          1. Follow plan from plan-agent
+          2. Write code following CLAUDE.md conventions
+          3. Verify implementation manually
+          4. Commit with Linear issue reference
+          Reference: plan_v3.md lines 444-515
+        </details>
+      </task>
+      <task id="4.4">
+        <name>Update start command with coding loop</name>
+        <file>marathon-ralph/commands/start.md</file>
+        <details>
+          After init completes (or on resume):
+          1. Run verify-agent
+          2. Query Linear for next Todo issue
+          3. Run plan-agent
+          4. Run code-agent
+          5. Mark issue Done in Linear
+          6. Update META issue with session notes
+          Loop stops after one issue (hooks will continue)
+        </details>
+      </task>
+    </tasks>
+    <test-criteria>
+      - verify-agent detects project type and runs checks
+      - plan-agent creates implementation plan from issue
+      - code-agent implements feature and commits
+      - Issue status updated in Linear
+      - One complete issue cycle works end-to-end
+    </test-criteria>
+  </group>
+
+  <group id="5" name="Testing Agents">
+    <description>
+      Add test-agent and qa-agent for comprehensive test coverage.
+      After this group: Features get unit tests and E2E tests.
+    </description>
+    <tasks>
+      <task id="5.1">
+        <name>Create test-agent</name>
+        <file>marathon-ralph/agents/test.md</file>
+        <details>
+          Model: sonnet
+          Tools: Read, Write, Edit, Glob, Grep, Bash
+          1. Review recent implementation
+          2. Check acceptance criteria
+          3. Write unit tests following existing patterns
+          4. Write integration tests if applicable
+          5. Run tests to verify passing
+          6. Commit test files
+          Reference: plan_v3.md lines 519-597
+        </details>
+      </task>
+      <task id="5.2">
+        <name>Create qa-agent</name>
+        <file>marathon-ralph/agents/qa.md</file>
+        <details>
+          Model: sonnet
+          Tools: Read, Write, Edit, Glob, Grep, Bash
+          1. Check if web project (skip if not)
+          2. Review feature from user perspective
+          3. Create E2E tests (Playwright/Cypress)
+          4. Write tests in BDD style
+          5. Run and verify E2E tests
+          6. Commit E2E test files
+          Reference: plan_v3.md lines 601-685
+        </details>
+      </task>
+      <task id="5.3">
+        <name>Update start command to include test agents</name>
+        <file>marathon-ralph/commands/start.md</file>
+        <details>
+          After code-agent completes:
+          1. Run test-agent
+          2. Run qa-agent (if web project)
+          3. Then mark issue Done
+        </details>
+      </task>
+    </tasks>
+    <test-criteria>
+      - test-agent writes appropriate unit tests
+      - qa-agent creates E2E tests for web projects
+      - qa-agent skips gracefully for non-web projects
+      - All tests pass before issue marked Done
+    </test-criteria>
+  </group>
+
+  <group id="6" name="Continuous Operation (Stop Hook)">
+    <description>
+      Add hooks for continuous autonomous operation across sessions.
+      After this group: Marathon continues automatically until all issues Done.
+    </description>
+    <tasks>
+      <task id="6.1">
+        <name>Create hooks.json configuration</name>
+        <file>marathon-ralph/hooks/hooks.json</file>
+        <details>
+          Configure Stop hook to run stop-hook.sh
+          Use ${CLAUDE_PLUGIN_ROOT} for path resolution
+          Reference: plan_v3.md lines 885-902, chief-wiggum/hooks/hooks.json
+        </details>
+      </task>
+      <task id="6.2">
+        <name>Create stop-hook.sh script</name>
+        <file>marathon-ralph/hooks/stop-hook.sh</file>
+        <details>
+          1. Read input from stdin (JSON)
+          2. Check for .claude/marathon-ralph.json
+          3. If not active or complete: allow exit
+          4. If active: check iteration limit (100 max)
+          5. Return JSON to block exit with continuation prompt
+          6. Include safety limits and iteration tracking
+          Reference: plan_v3.md lines 904-966, chief-wiggum/hooks/stop-hook.sh
+        </details>
+      </task>
+      <task id="6.3">
+        <name>Make stop-hook.sh executable</name>
+        <file>marathon-ralph/hooks/stop-hook.sh</file>
+        <details>chmod +x the script</details>
+      </task>
+    </tasks>
+    <test-criteria>
+      - Stop hook blocks exit when marathon is active
+      - Stop hook allows exit when marathon is complete/inactive
+      - Iteration safety limit prevents infinite loops
+      - Continuation prompt includes next steps
+    </test-criteria>
+  </group>
+
+  <group id="7" name="Natural Language + Cancel">
+    <description>
+      Add skill for natural language invocation and cancel command.
+      After this group: Full feature parity with plan.
+    </description>
+    <tasks>
+      <task id="7.1">
+        <name>Create marathon-ralph skill</name>
+        <file>marathon-ralph/skills/marathon-ralph/SKILL.md</file>
+        <details>
+          YAML frontmatter with description and triggers
+          Trigger phrases: "marathon this", "build from spec", "autonomous development"
+          Document usage and prerequisites
+          Map natural language to commands
+          Reference: plan_v3.md lines 811-879
+        </details>
+      </task>
+      <task id="7.2">
+        <name>Create cancel command</name>
+        <file>marathon-ralph/commands/cancel.md</file>
+        <details>
+          1. Check for active marathon
+          2. Confirm with user
+          3. Set active: false in state file
+          4. Add final note to META issue
+          5. Do NOT delete Linear project
+          Reference: plan_v3.md lines 784-807
+        </details>
+      </task>
+      <task id="7.3">
+        <name>Update README.md with full documentation</name>
+        <file>marathon-ralph/README.md</file>
+        <details>
+          Complete documentation:
+          - All commands with examples
+          - Skill usage examples
+          - Architecture overview
+          - Troubleshooting section
+          - How hooks work
+        </details>
+      </task>
+    </tasks>
+    <test-criteria>
+      - Natural language triggers skill correctly
+      - Cancel command stops marathon cleanly
+      - Linear project preserved after cancel
+      - README covers all functionality
+    </test-criteria>
+  </group>
+
+  <group id="8" name="Polish + Edge Cases">
+    <description>
+      Final polish, error handling, and edge case handling.
+      After this group: Production-ready plugin.
+    </description>
+    <tasks>
+      <task id="8.1">
+        <name>Add error handling to all agents</name>
+        <file>marathon-ralph/agents/*.md</file>
+        <details>
+          Handle: Linear API failures, missing files, git conflicts
+          Provide clear error messages
+          Graceful degradation where possible
+        </details>
+      </task>
+      <task id="8.2">
+        <name>Add CLAUDE.md for plugin development</name>
+        <file>marathon-ralph/CLAUDE.md</file>
+        <details>
+          Developer documentation for contributing
+          Plugin architecture overview
+          Testing instructions
+        </details>
+      </task>
+      <task id="8.3">
+        <name>Create sample spec file for testing</name>
+        <file>marathon-ralph/examples/sample-spec.md</file>
+        <details>
+          Reference: plan_v3.md lines 1072-1115
+          Todo app example with all sections
+        </details>
+      </task>
+      <task id="8.4">
+        <name>Add assets/banner.png</name>
+        <file>marathon-ralph/assets/banner.png</file>
+        <details>Visual asset for marketplace listing</details>
+      </task>
+    </tasks>
+    <test-criteria>
+      - All error cases handled gracefully
+      - Sample spec works end-to-end
+      - Documentation complete
+      - Ready for marketplace submission
+    </test-criteria>
+  </group>
+
+  <dependencies>
+    <note>
+      Groups must be completed in order (1 → 2 → 3 → ... → 8).
+      Each group depends on the previous group being complete.
+      Within a group, tasks can often be done in parallel.
+    </note>
+  </dependencies>
+
+  <success-criteria>
+    <!-- From plan_v3.md lines 1037-1053 -->
+    <criterion>Plugin loads successfully with claude --plugin-dir ./marathon-ralph</criterion>
+    <criterion>/marathon-ralph:start creates Linear project from spec</criterion>
+    <criterion>Issues are dynamically generated based on spec content</criterion>
+    <criterion>Team selection works when user has multiple Linear teams</criterion>
+    <criterion>Verification runs before each new issue</criterion>
+    <criterion>Regressions create new linked bug issues (not reopen)</criterion>
+    <criterion>Each agent completes its designated task</criterion>
+    <criterion>Stop hook continues marathon until all issues Done</criterion>
+    <criterion>/marathon-ralph:status shows accurate progress</criterion>
+    <criterion>/marathon-ralph:cancel cleanly stops marathon</criterion>
+    <criterion>Natural language invocation works via skill</criterion>
+    <criterion>Greenfield projects get init.sh and CLAUDE.md</criterion>
+    <criterion>Git commits reference Linear issue IDs</criterion>
+    <criterion>META issue tracks session handoff notes</criterion>
+  </success-criteria>
+</task-list>
