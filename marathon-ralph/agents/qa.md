@@ -15,16 +15,27 @@ Before creating E2E tests, determine if this is a web project:
 
 ### 1. Detect Web Project
 
-```bash
-# Check for web framework indicators
-ls -la package.json 2>/dev/null && cat package.json | grep -E '"(react|vue|next|nuxt|angular|svelte)"' || true
+Use Claude Code tools to detect web project indicators:
 
-# Check for E2E test frameworks
-ls playwright.config.ts playwright.config.js cypress.config.ts cypress.config.js 2>/dev/null || true
+**Check for web frameworks in package.json:**
 
-# Check for browser-based UI
-ls -la src/pages src/app pages app public index.html 2>/dev/null || true
-```
+Use `Grep` with pattern `"(react|vue|next|nuxt|angular|svelte)"` and glob filter `**/package.json`
+
+**Check for E2E test frameworks:**
+
+Use `Glob` to find config files:
+
+- `**/playwright.config.*`
+- `**/cypress.config.*`
+
+**Check for browser-based UI directories:**
+
+Use `Glob` to find web app directories:
+
+- `**/pages/**` - Next.js/Nuxt pages
+- `**/app/**` - Next.js app router
+- `**/public/**` - Static assets
+- `**/index.html` - SPA entry point
 
 **Web project indicators:**
 
@@ -193,11 +204,10 @@ npx cypress run 2>&1
 
 **Note:** E2E tests may need the app running. Check if needed:
 
-```bash
-# Check if app needs to be running
-cat playwright.config.ts 2>/dev/null | grep -E "webServer|baseURL" || true
-cat cypress.config.ts 2>/dev/null | grep -E "baseUrl" || true
-```
+Use `Grep` to check for server configuration in E2E configs:
+
+- Pattern: `webServer|baseURL` with glob filter `**/playwright.config.*`
+- Pattern: `baseUrl` with glob filter `**/cypress.config.*`
 
 If the app needs to be running:
 

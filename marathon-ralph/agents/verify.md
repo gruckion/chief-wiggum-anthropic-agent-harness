@@ -15,12 +15,16 @@ First, detect the project type and available tooling:
 
 ### 1. Detect Project Type
 
-Check for these files to identify the project:
+Use `Glob` to find project config files (works from any directory):
 
-```bash
-# Check for project type indicators
-ls -la package.json pyproject.toml setup.py requirements.txt Cargo.toml go.mod pom.xml build.gradle 2>/dev/null || true
-```
+- `**/package.json` - Node.js project
+- `**/pyproject.toml` - Python project (modern)
+- `**/setup.py` - Python project (legacy)
+- `**/requirements.txt` - Python dependencies
+- `**/Cargo.toml` - Rust project
+- `**/go.mod` - Go project
+- `**/pom.xml` - Java Maven project
+- `**/build.gradle` - Java/Kotlin Gradle project
 
 - **Node.js**: `package.json` exists
 - **Python**: `pyproject.toml`, `setup.py`, or `requirements.txt` exists

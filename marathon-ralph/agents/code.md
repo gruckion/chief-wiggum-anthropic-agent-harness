@@ -42,11 +42,10 @@ You will receive:
 
 Before writing code, read and follow project conventions:
 
-```bash
-# Check for project guidelines
-cat CLAUDE.md 2>/dev/null || cat .claude.md 2>/dev/null || true
-cat CONTRIBUTING.md 2>/dev/null || true
-```
+Use `Glob` to find guideline files, then `Read` to examine them:
+
+- `**/CLAUDE.md` or `**/.claude.md` - Project-specific Claude instructions
+- `**/CONTRIBUTING.md` - Contribution guidelines
 
 **Code standards:**
 

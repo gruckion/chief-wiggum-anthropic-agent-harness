@@ -40,20 +40,25 @@ Discover existing test patterns in the codebase:
 
 **Find test files:**
 
-```bash
-# Look for existing test files
-find . -type f \( -name "*.test.ts" -o -name "*.test.js" -o -name "*.spec.ts" -o -name "*.spec.js" -o -name "test_*.py" -o -name "*_test.py" \) | head -20
-```
+Use the `Glob` tool to find existing test files:
+
+- `**/*.test.ts` - TypeScript test files
+- `**/*.test.js` - JavaScript test files
+- `**/*.spec.ts` - TypeScript spec files
+- `**/*.spec.js` - JavaScript spec files
+- `**/test_*.py` - Python test files (prefix style)
+- `**/*_test.py` - Python test files (suffix style)
 
 **Check test configuration:**
 
-```bash
-# Node.js - check Jest/Vitest config
-cat jest.config.js vitest.config.ts 2>/dev/null | head -30 || true
+Use the `Glob` tool to find config files, then `Read` to examine them:
 
-# Python - check pytest config
-cat pytest.ini pyproject.toml 2>/dev/null | grep -A 20 "\[tool.pytest" || true
-```
+- Node.js: `**/jest.config.*`, `**/vitest.config.*`
+- Python: `**/pytest.ini`, `**/pyproject.toml`
+
+For Python, use `Grep` to find pytest config:
+
+- Pattern: `\[tool\.pytest` with glob filter `pyproject.toml`
 
 **Read a few existing tests** to understand:
 
