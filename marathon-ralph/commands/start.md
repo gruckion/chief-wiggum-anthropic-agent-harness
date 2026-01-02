@@ -235,6 +235,42 @@ Use the Agent tool to run `marathon-code`:
 - Exit (user can retry by running /marathon-ralph:start again)
 
 **If implementation succeeds:**
+- Proceed to step 8.5 (test-agent)
+
+#### 8.5: Run Test Agent
+
+**Run test-agent** to write tests for the implementation:
+
+Use the Agent tool to run `marathon-test`:
+- The agent reviews the implementation from code-agent
+- Writes unit tests for new code
+- Writes integration tests if applicable
+- Creates a commit with the tests
+
+**If test writing fails:**
+- Report the failure
+- Keep issue as "In Progress" for retry
+- Exit (user can retry)
+
+**If tests pass:**
+- Proceed to step 8.6 (qa-agent)
+
+#### 8.6: Run QA Agent
+
+**Run qa-agent** to create E2E tests (for web projects):
+
+Use the Agent tool to run `marathon-qa`:
+- The agent checks if this is a web project
+- If not a web project: Skips with message and proceeds
+- If web project: Creates E2E tests for the feature
+- Creates a commit with E2E tests (if applicable)
+
+**If E2E tests fail:**
+- Report the failure
+- Keep issue as "In Progress" for retry
+- Exit (user can retry)
+
+**If E2E tests pass (or skipped for non-web):**
 - Mark the issue as "Done" in Linear
 - Update stats in state file:
   ```json
@@ -247,7 +283,7 @@ Use the Agent tool to run `marathon-code`:
   }
   ```
 
-#### 8.5: Update META Issue
+#### 8.7: Update META Issue
 
 Add a session note to the META issue in Linear:
 
@@ -264,13 +300,15 @@ Add a session note to the META issue in Linear:
 - <any relevant notes>
 ```
 
-#### 8.6: Report Progress
+#### 8.8: Report Progress
 
 ```
 Issue Completed: [ISSUE-ID] <title>
 
-Commit: <hash>
-Changes: <summary>
+Commits:
+- Implementation: <hash>
+- Tests: <hash>
+- E2E: <hash> (or "skipped - not a web project")
 
 Progress: <completed>/<total> issues done
 
@@ -289,6 +327,8 @@ or the Stop hook will continue automatically in future sessions.
 - If Linear project creation fails: init-agent will report the issue
 - If verification fails: Bug issue created, becomes next task
 - If implementation fails: Report failure, user can retry
+- If test writing fails: Report failure, keep issue In Progress
+- If E2E tests fail: Report failure, keep issue In Progress
 
 ## Resume Behavior
 
@@ -298,7 +338,7 @@ When resuming from an interrupted session:
 |---------------|--------|
 | setup | Re-run setup-agent, then init-agent, then coding loop |
 | init | Re-run init-agent, then coding loop |
-| coding | Resume coding loop (verify → get issue → plan → code) |
+| coding | Resume coding loop (verify → get issue → plan → code → test → qa) |
 | complete | Ask user confirmation to start new marathon |
 
 ## State File Updates
@@ -319,3 +359,6 @@ The state file is updated at these points:
 - The verify-agent ensures code health before each new issue
 - The plan-agent creates implementation plans
 - The code-agent writes the actual code
+- The test-agent writes unit and integration tests after implementation
+- The qa-agent writes E2E tests for web projects (skips non-web projects)
+- Issues are only marked Done after all tests pass

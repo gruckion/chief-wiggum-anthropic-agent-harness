@@ -80,7 +80,7 @@ Check the current marathon session status.
 
 ## The Coding Loop Workflow
 
-Marathon Ralph uses a **verify → plan → code** workflow for each issue:
+Marathon Ralph uses a **verify → plan → code → test → qa** workflow for each issue:
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -104,6 +104,16 @@ Marathon Ralph uses a **verify → plan → code** workflow for each issue:
 │       ▼                                          │
 │  ┌──────────┐                                    │
 │  │   CODE   │ ← Implement the feature           │
+│  └────┬─────┘                                    │
+│       │                                          │
+│       ▼                                          │
+│  ┌──────────┐                                    │
+│  │   TEST   │ ← Write unit/integration tests    │
+│  └────┬─────┘                                    │
+│       │                                          │
+│       ▼                                          │
+│  ┌──────────┐                                    │
+│  │    QA    │ ← Write E2E tests (web only)      │
 │  └────┬─────┘                                    │
 │       │                                          │
 │       ▼                                          │
@@ -156,9 +166,37 @@ The **code-agent** implements the feature:
 - Writes clean code following project conventions
 - Verifies the implementation works
 - Creates a commit with the Linear issue ID
-- Does NOT write tests (that's a future test-agent's job)
+- Does NOT write tests (that's the test-agent's job)
 
 **Output:** Working code committed to the repository.
+
+### Phase 5: Test
+
+The **test-agent** writes tests for the implementation:
+
+- Reviews the files modified by code-agent
+- Checks acceptance criteria for test coverage needs
+- Follows existing test patterns and frameworks
+- Writes unit tests for individual functions/components
+- Writes integration tests for feature workflows
+- Covers edge cases and error handling
+- Creates a commit with the test files
+
+**Output:** Comprehensive test suite committed to the repository.
+
+### Phase 6: QA
+
+The **qa-agent** creates E2E tests for web projects:
+
+- First determines if this is a web project (React, Vue, Next.js, etc.)
+- **If NOT a web project:** Skips with message and proceeds
+- **If web project:**
+  - Uses existing E2E framework (Playwright or Cypress)
+  - Tests complete user flows
+  - Covers success and error scenarios
+  - Creates a commit with E2E tests
+
+**Output:** E2E tests committed (or skipped for non-web projects).
 
 ## Issue Progression
 
@@ -226,6 +264,8 @@ Marathon Ralph uses specialized subagents for each task:
 | `marathon-verify` | Run tests, lint, type checks | sonnet |
 | `marathon-plan` | Create implementation plan | sonnet |
 | `marathon-code` | Implement the feature | sonnet |
+| `marathon-test` | Write unit and integration tests | sonnet |
+| `marathon-qa` | Write E2E tests (web projects only) | sonnet |
 
 ## Directory Structure
 
@@ -239,7 +279,9 @@ marathon-ralph/
 │   ├── init.md           # Project initialization
 │   ├── verify.md         # Codebase health checks
 │   ├── plan.md           # Implementation planning
-│   └── code.md           # Feature implementation
+│   ├── code.md           # Feature implementation
+│   ├── test.md           # Unit/integration test writing
+│   └── qa.md             # E2E test writing (web only)
 ├── commands/             # Slash command definitions
 │   ├── start.md          # /marathon-ralph:start
 │   └── status.md         # /marathon-ralph:status
@@ -255,14 +297,14 @@ marathon-ralph/
    - Verify codebase health
    - Plan the implementation
    - Code the feature
-   - Mark issue done
+   - Write unit/integration tests
+   - Write E2E tests (web projects only)
+   - Mark issue done (only after tests pass)
 5. **Complete**: When all issues are done, marathon ends
 
 ## Future Enhancements
 
 Coming in future groups:
-- **Test Agent**: Automatically write tests after implementation
-- **QA Agent**: E2E testing for web projects
 - **Stop Hook**: Automatic session continuation
 - **Cancel Command**: Abort an in-progress marathon
 
