@@ -285,6 +285,9 @@ marathon-ralph/
 ├── commands/             # Slash command definitions
 │   ├── start.md          # /marathon-ralph:start
 │   └── status.md         # /marathon-ralph:status
+├── hooks/                # Claude Code hooks
+│   ├── hooks.json        # Hook configuration
+│   └── stop-hook.sh      # Stop hook for continuous operation
 └── README.md             # This file
 ```
 
@@ -302,11 +305,84 @@ marathon-ralph/
    - Mark issue done (only after tests pass)
 5. **Complete**: When all issues are done, marathon ends
 
+## Continuous Operation (Stop Hook)
+
+Marathon Ralph uses a **Stop Hook** to enable continuous autonomous operation. When Claude attempts to exit during an active marathon, the hook intercepts the exit and instructs Claude to continue with the next issue.
+
+### How It Works
+
+1. **On Session Exit Attempt**: Claude Code triggers the Stop hook
+2. **State Check**: The hook reads `.claude/marathon-ralph.json`
+3. **Decision Logic**:
+   - If no state file exists: Allow exit (not in a marathon)
+   - If `active: false` or `phase: complete`: Allow exit
+   - If marathon is active in `coding` phase: Block exit and continue
+
+### Iteration Safety Limit
+
+To prevent infinite loops, the hook tracks iterations and enforces a maximum of **100 iterations** per marathon. If this limit is reached:
+
+- The hook allows exit with a notification
+- The marathon is paused (not cancelled)
+- Resume by running `/marathon-ralph:start` again
+
+The iteration count is stored in `stop_hook_iterations` in the state file.
+
+### Manually Stopping a Marathon
+
+There are several ways to stop an active marathon:
+
+1. **Cancel Command** (recommended):
+   ```
+   /marathon-ralph:cancel
+   ```
+   This cleanly stops the marathon and updates state.
+
+2. **Manual State Edit**:
+   Edit `.claude/marathon-ralph.json` and set:
+   ```json
+   {
+     "active": false,
+     "phase": "complete"
+   }
+   ```
+
+3. **Delete State File**:
+   ```bash
+   rm .claude/marathon-ralph.json
+   ```
+   This removes all marathon state (use with caution).
+
+### Hook Files
+
+```
+hooks/
+├── hooks.json      # Hook configuration (registers Stop hook)
+└── stop-hook.sh    # Stop hook script (bash)
+```
+
+The `hooks.json` configuration:
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-hook.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
 ## Future Enhancements
 
 Coming in future groups:
-- **Stop Hook**: Automatic session continuation
-- **Cancel Command**: Abort an in-progress marathon
+- **Cancel Command**: Abort an in-progress marathon cleanly
 
 ## Related Projects
 
