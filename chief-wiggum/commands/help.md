@@ -1,0 +1,128 @@
+---
+description: "Explain Wiggum technique and available commands"
+---
+
+# Chief Wiggum Plugin Help
+
+Please explain the following to the user:
+
+## What is the Ralph Wiggum Technique?
+
+The Ralph Wiggum technique is an iterative development methodology based on continuous AI loops, pioneered by Geoffrey Huntley.
+
+**Core concept:**
+```bash
+while :; do
+  cat PROMPT.md | claude-code --continue
+done
+```
+
+The same prompt is fed to Claude repeatedly. The "self-referential" aspect comes from Claude seeing its own previous work in the files and git history, not from feeding output back as input.
+
+**Each iteration:**
+1. Claude receives the SAME prompt
+2. Works on the task, modifying files
+3. Tries to exit
+4. Stop hook intercepts and feeds the same prompt again
+5. Claude sees its previous work in the files
+6. Iteratively improves until completion
+
+The technique is described as "deterministically bad in an undeterministic world" - failures are predictable, enabling systematic improvement through prompt tuning.
+
+## Available Commands
+
+### /wiggum-loop <PROMPT> [OPTIONS]
+
+Start a Wiggum loop in your current session.
+
+**Usage:**
+```
+/wiggum-loop "Refactor the cache layer" --completion-promise "REFACTOR DONE" --max-iterations 15
+/wiggum-loop "Add tests until passing" --completion-promise "TESTS COMPLETE" --max-iterations 10
+```
+
+**Options:**
+- `--completion-promise <text>` - Promise phrase to signal completion (HIGHLY ENCOURAGED)
+- `--max-iterations <n>` - Max iterations before auto-stop (HIGHLY ENCOURAGED)
+
+**IMPORTANT:** Always specify BOTH options. A reasonable default for max iterations is 10-20. Loops without these safeguards can run indefinitely.
+
+**How it works:**
+1. Creates `.claude/wiggum-loop.local.md` state file
+2. You work on the task
+3. When you try to exit, stop hook intercepts
+4. Same prompt fed back
+5. You see your previous work
+6. Continues until promise detected or max iterations
+
+---
+
+### /cancel-wiggum
+
+Cancel an active Wiggum loop (removes the loop state file).
+
+**Usage:**
+```
+/cancel-wiggum
+```
+
+**How it works:**
+- Checks for active loop state file
+- Removes `.claude/wiggum-loop.local.md`
+- Reports cancellation with iteration count
+
+---
+
+## Key Concepts
+
+### Completion Promises
+
+To signal completion, Claude must output a `<promise>` tag:
+
+```
+<promise>TASK COMPLETE</promise>
+```
+
+The stop hook looks for this specific tag. **Always use BOTH a completion promise AND max iterations** to prevent infinite loops. Use 10-20 as a reasonable default iteration count.
+
+### Self-Reference Mechanism
+
+The "loop" doesn't mean Claude talks to itself. It means:
+- Same prompt repeated
+- Claude's work persists in files
+- Each iteration sees previous attempts
+- Builds incrementally toward goal
+
+## Example
+
+### Interactive Bug Fix
+
+```
+/wiggum-loop "Fix the token refresh logic in auth.ts. Output <promise>FIXED</promise> when all tests pass." --completion-promise "FIXED" --max-iterations 10
+```
+
+You'll see the loop:
+- Attempt fixes
+- Run tests
+- See failures
+- Iterate on solution
+- In your current session
+
+## When to Use Wiggum Loop
+
+**Good for:**
+- Well-defined tasks with clear success criteria
+- Tasks requiring iteration and refinement
+- Iterative development with self-correction
+- Greenfield projects
+
+**Not good for:**
+- Tasks requiring human judgment or design decisions
+- One-shot operations
+- Tasks with unclear success criteria
+- Debugging production issues (use targeted debugging instead)
+
+## Learn More
+
+- Original technique: https://ghuntley.com/ralph/
+- Ralph Orchestrator: https://github.com/mikeyobrien/ralph-orchestrator
