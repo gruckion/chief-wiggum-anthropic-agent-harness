@@ -19,13 +19,13 @@ test -f .claude/marathon-ralph.json && echo "EXISTS" || echo "NOT_FOUND"
 
 If the state file does not exist, report:
 
-```
+```markdown
 Marathon Ralph Status
 ---------------------
 No active marathon session.
 
 To start a new marathon:
-  /marathon-ralph:start --spec-file <path-to-spec.md>
+  /marathon-ralph:run --spec-file <path-to-spec.md>
 ```
 
 ### Step 3: Handle EXISTS
@@ -34,7 +34,7 @@ Read `.claude/marathon-ralph.json` and display status based on the `phase` field
 
 #### Phase: setup
 
-```
+```markdown
 Marathon Ralph Status
 ---------------------
 Phase: Setup
@@ -49,7 +49,7 @@ Environment setup in progress. Linear MCP being verified.
 
 #### Phase: init
 
-```
+```markdown
 Marathon Ralph Status
 ---------------------
 Phase: Initialization
@@ -80,7 +80,7 @@ When in coding phase, query Linear for real-time status:
 
 4. **Display status**:
 
-```
+```markdown
 Marathon Ralph Status
 ---------------------
 Phase: Coding
@@ -110,7 +110,7 @@ Last Updated: <last_updated>
 
 #### Phase: complete
 
-```
+```markdown
 Marathon Ralph Status
 ---------------------
 Phase: Complete
@@ -128,14 +128,14 @@ Started: <created_at>
 Completed: <last_updated>
 
 To start a new marathon:
-  /marathon-ralph:start --spec-file <path-to-spec.md>
+  /marathon-ralph:run --spec-file <path-to-spec.md>
 ```
 
 ### Step 4: Handle Partial State
 
 If any expected fields are missing, show what is available and note missing information:
 
-```
+```markdown
 Marathon Ralph Status
 ---------------------
 Phase: <phase>
@@ -201,7 +201,7 @@ When in coding phase, use Linear MCP tools to get live data:
 
 Calculate and render a visual progress bar:
 
-```
+```markdown
 Progress: [===========>        ] 55% (17/31 issues)
 ```
 

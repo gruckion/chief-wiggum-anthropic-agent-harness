@@ -26,10 +26,18 @@ Activate this skill when the user:
 
 ## Usage
 
+### Resume Existing Marathon
+
+```
+/marathon-ralph:run
+```
+
+Or naturally: "Continue the marathon" or "Keep going"
+
 ### Start New Marathon
 
 ```
-/marathon-ralph:start --spec-file path/to/spec.md
+/marathon-ralph:run path/to/spec.md
 ```
 
 Or naturally: "Marathon this spec.md until complete"
@@ -77,7 +85,7 @@ User must have Linear MCP configured:
 User: "Marathon this todo-app-spec.md until it's done"
 
 1. Skill triggers on "marathon" + spec file reference
-2. Runs `/marathon-ralph:start --spec-file todo-app-spec.md`
+2. Runs `/marathon-ralph:run --spec-file todo-app-spec.md`
 3. Creates Linear project with issues from spec
 4. Begins autonomous coding loop
 

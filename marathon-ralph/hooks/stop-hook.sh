@@ -9,6 +9,9 @@ set -e
 # Read input from stdin (JSON from Claude Code)
 INPUT=$(cat)
 
+# Extract current session ID from stdin JSON
+CURRENT_SESSION=$(echo "$INPUT" | jq -r '.session_id // empty')
+
 # Get project directory from environment or default to current
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
 STATE_FILE="$PROJECT_DIR/.claude/marathon-ralph.json"
@@ -21,6 +24,14 @@ fi
 # Read marathon state using jq
 ACTIVE=$(jq -r '.active // false' "$STATE_FILE" 2>/dev/null || echo "false")
 PHASE=$(jq -r '.phase // "unknown"' "$STATE_FILE" 2>/dev/null || echo "unknown")
+MARATHON_SESSION=$(jq -r '.session_id // empty' "$STATE_FILE" 2>/dev/null || echo "")
+
+# SESSION SCOPING: Only block exit if this session started the marathon
+# Allow exit if: no session_id in marathon (legacy) OR session IDs don't match
+# Block only if: session IDs exist AND match (this session owns the marathon)
+if [ -z "$MARATHON_SESSION" ] || [ "$MARATHON_SESSION" != "$CURRENT_SESSION" ]; then
+  exit 0
+fi
 
 # If not active or phase is complete, allow exit
 if [ "$ACTIVE" != "true" ] || [ "$PHASE" = "complete" ]; then
@@ -41,7 +52,7 @@ if [ "$ITERATIONS" -ge "$MAX_ITERATIONS" ]; then
   cat << 'EOF'
 {
   "decision": "allow",
-  "reason": "Max iterations (100) reached. Marathon paused for safety. Resume with /marathon-ralph:start"
+  "reason": "Max iterations (100) reached. Marathon paused for safety. Resume with /marathon-ralph:run"
 }
 EOF
   exit 0
@@ -62,8 +73,7 @@ fi
 cat << 'EOF'
 {
   "decision": "block",
-  "reason": "Marathon in progress. Continue with next issue:\n\n1. Run verify-agent to check codebase health\n2. Query Linear for next Todo issue in the marathon project\n3. If no issues remain, update state to phase: complete\n4. Otherwise, run plan-agent -> code-agent -> test-agent -> qa-agent\n5. Mark issue Done in Linear, commit changes, continue to next issue",
-  "systemMessage": "Marathon ralph continuing to next issue..."
+  "reason": "Marathon in progress. Continue with next issue:\n\n1. Read `.claude/marathon-ralph.json` for project context (project_id, team_id, current_issue)\n2. Run marathon-verify agent to check codebase health (tests, lint, types)\n3. Query Linear for next Todo issue in the project using mcp__linear__list_issues with project filter\n4. If no Todo issues remain:\n   - Update `.claude/marathon-ralph.json` with phase: \"complete\" and active: false\n   - Add completion note to META issue in Linear\n   - Report marathon complete\n5. If issues remain:\n   - Update state file with new current_issue\n   - Run marathon-plan agent to create implementation plan\n   - Run marathon-code agent to implement the feature\n   - Run marathon-test agent to write unit/integration tests\n   - Run marathon-qa agent to write E2E tests (web projects only)\n   - Mark issue Done in Linear using mcp__linear__update_issue\n   - Update stats in state file\n   - Commit all changes with Linear issue ID\n   - Continue to next issue"
 }
 EOF
 

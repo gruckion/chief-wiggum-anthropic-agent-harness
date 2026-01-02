@@ -32,7 +32,7 @@ If the file does not exist or `active` is `false`:
 
 Display the current marathon status:
 
-```
+```markdown
 Marathon: [project_name]
 Phase: [phase]
 Progress: [completed]/[total_issues] issues completed
@@ -43,7 +43,7 @@ Current Issue: [current_issue.id] - [current_issue.title]
 
 Ask for explicit confirmation:
 
-```
+```markdown
 Cancel marathon "[project_name]"? This will stop autonomous processing. (y/n)
 ```
 
@@ -70,14 +70,14 @@ Only set `active: false`. Keep the phase as-is so status shows it was cancelled,
 
 If `linear.meta_issue_id` exists in state, add a comment to the META issue:
 
-```
+```markdown
 ## Marathon Cancelled - [timestamp]
 
 Marathon was manually cancelled by user.
 Progress at cancellation: [completed]/[total_issues] issues completed.
 
 The Linear project and remaining issues have been preserved.
-To resume, run `/marathon-ralph:start` again.
+To resume, run `/marathon-ralph:run` again.
 ```
 
 Use the Linear MCP to add this comment:
@@ -89,7 +89,7 @@ Use the Linear MCP to add this comment:
 
 Report to user:
 
-```
+```markdown
 Marathon cancelled.
 
 Summary:
@@ -97,13 +97,13 @@ Summary:
 - Progress: [completed]/[total_issues] issues completed
 - Linear project preserved
 
-You can resume later with /marathon-ralph:start or view progress in Linear.
+You can resume later with /marathon-ralph:run or view progress in Linear.
 ```
 
 ## Important Notes
 
 - This command does NOT delete the Linear project or issues
-- The user can resume the marathon later by running `/marathon-ralph:start`
+- The user can resume the marathon later by running `/marathon-ralph:run`
 - Remaining issues stay in "Todo" status in Linear
 - Any issue currently "In Progress" stays in that status (user can update manually in Linear)
 - The state file is preserved for reference and potential resume
@@ -114,11 +114,11 @@ You can resume later with /marathon-ralph:start or view progress in Linear.
 
 If `.claude/marathon-ralph.json` does not exist:
 
-```
+```markdown
 No active marathon to cancel.
 
 To start a new marathon, use:
-/marathon-ralph:start --spec-file path/to/spec.md
+/marathon-ralph:run --spec-file path/to/spec.md
 ```
 
 ### Linear MCP Not Available

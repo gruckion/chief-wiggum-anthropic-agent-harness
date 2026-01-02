@@ -1,51 +1,37 @@
 ---
-description: Start autonomous marathon development from a specification file
-argument-hint: --spec-file <path> or just <path>
+description: Run autonomous marathon development - resume existing or start new from specification
+argument-hint: [--spec-file <path> | <path>] (only required when starting new)
 allowed-tools: ["Read", "Write", "Bash", "Glob", "Agent"]
 ---
 
-# Start Marathon
+# Run Marathon
 
-Start a new marathon development session from a specification file, or resume an existing session.
+Run the marathon development system. This command automatically:
+
+- **Resumes** an existing marathon if one is in progress (no arguments needed)
+- **Starts** a new marathon from a specification file (spec file required)
 
 ## Arguments
 
 $ARGUMENTS
 
-Expected formats:
+Expected formats (only required when starting new):
 
 - `--spec-file <path>`
 - `<path>` (direct path to spec file)
+- No arguments (resume existing marathon)
 
 ## Process
 
-### Step 1: Parse Spec File Path
+### Step 1: Check Existing Marathon State
 
-Extract the spec file path from the arguments:
+Use the Read tool to check if `.claude/marathon-ralph.json` exists:
 
-- If argument starts with `--spec-file`, use the following value
-- Otherwise, treat the entire argument as the path
-- If no path provided, report error: "Please provide a spec file path: /marathon-ralph:start --spec-file <path>"
+- Attempt to read the file
+- If successful, the file exists - proceed to parse the JSON
+- If the Read tool returns an error (file not found), treat as NOT_FOUND
 
-### Step 2: Validate Spec File Exists
-
-Use Bash to check if the spec file exists:
-
-```bash
-test -f "<spec_path>" && echo "EXISTS" || echo "NOT_FOUND"
-```
-
-If NOT_FOUND, report error: "Spec file not found: <spec_path>"
-
-### Step 3: Check Existing Marathon State
-
-Check if `.claude/marathon-ralph.json` exists:
-
-```bash
-test -f .claude/marathon-ralph.json && echo "EXISTS" || echo "NOT_FOUND"
-```
-
-### Step 4: Handle Existing State
+### Step 2: Handle Based on State
 
 **If state file EXISTS:**
 
@@ -53,30 +39,64 @@ test -f .claude/marathon-ralph.json && echo "EXISTS" || echo "NOT_FOUND"
 2. Check the `phase` field:
 
    - **If phase is "coding":**
-     Report: "An active marathon is in progress. Resuming coding loop..."
-     Skip to Step 8 (Coding Loop).
-
-   - **If phase is "complete":**
-     Ask: "Previous marathon completed. Start a new marathon? (This will overwrite the state file)"
-     - If user confirms, proceed to Step 5
-     - If user declines, exit
+     Report: "Resuming active marathon..."
+     Display current progress (X/Y issues completed)
+     Skip to Step 7 (Coding Loop) - NO spec file needed.
 
    - **If phase is "setup":**
-     Report: "A marathon setup is in progress. Resuming from setup phase..."
-     Skip to Step 6 (run init-agent)
+     Report: "Resuming marathon from setup phase..."
+     Skip to Step 5 (Run Init Agent) - spec file already in state.
 
    - **If phase is "init":**
-     Report: "A marathon initialization is in progress. Resuming..."
-     Skip to Step 6 (run init-agent)
+     Report: "Resuming marathon initialization..."
+     Skip to Step 5 (Run Init Agent) - spec file already in state.
+
+   - **If phase is "complete":**
+     Report: "Previous marathon completed."
+     Check if spec file argument was provided:
+     - If YES: Ask "Start a new marathon with this spec? (This will overwrite the previous state)"
+       - If confirmed, proceed to Step 3
+       - If declined, exit
+     - If NO: Report "Run with a spec file to start a new marathon: /marathon-ralph:run <spec-file>"
+       Exit.
 
 **If state file NOT_FOUND:**
-Proceed to Step 5
 
-### Step 5: Run Setup Agent
+Check if spec file argument was provided:
+
+- If YES: Proceed to Step 3
+- If NO: Report error:
+
+  ```markdown
+  No active marathon found.
+
+  To start a new marathon, provide a specification file:
+    /marathon-ralph:run <spec-file>
+    /marathon-ralph:run --spec-file path/to/spec.md
+  ```
+
+  Exit.
+
+### Step 3: Parse Spec File Path
+
+Extract the spec file path from the arguments:
+
+- If argument starts with `--spec-file`, use the following value
+- Otherwise, treat the entire argument as the path
+
+### Step 4: Locate and Validate Spec File
+
+Use Glob with pattern `**/<spec_path>` to find the file.
+
+- If multiple matches, ask user to choose
+- If none found, report error with helpful message
+
+Then run the setup agent:
 
 1. **Run setup-agent** to verify Linear MCP is connected:
 
    Use the Agent tool to run `marathon-setup`:
+
    - The setup agent will check Linear MCP connectivity
    - It will create `.claude/marathon-ralph.json` with `phase: "setup"`
    - It will report success or failure with next steps
@@ -86,19 +106,22 @@ Proceed to Step 5
    Exit - do not proceed.
 
 3. **If setup succeeds:**
-   Update the state file to include the spec file path:
+   Update the state file to include the spec file path and session ID:
 
    ```json
    {
      "active": true,
      "phase": "setup",
      "spec_file": "<absolute_path_to_spec>",
+     "session_id": "<current_session_id>",
      "created_at": "<timestamp>",
      "last_updated": "<timestamp>"
    }
    ```
 
-### Step 6: Run Init Agent
+   **IMPORTANT:** The `session_id` enables session-scoped operation. The Stop hook only blocks exit for the session that started the marathon. Other sessions working in the same directory will not be affected.
+
+### Step 5: Run Init Agent
 
 1. **Update phase to "init":**
 
@@ -114,6 +137,7 @@ Proceed to Step 5
 2. **Run init-agent** to create Linear project and issues:
 
    Use the Agent tool to run `marathon-init`:
+
    - Pass the spec file path as context
    - The init agent will:
      - Read and analyze the specification
@@ -130,11 +154,11 @@ Proceed to Step 5
 
 4. **If init succeeds:**
    The init-agent will have updated the state to phase: "coding".
-   Proceed to Step 7.
+   Proceed to Step 6.
 
-### Step 7: Report Initialization Complete
+### Step 6: Report Initialization Complete
 
-```
+```markdown
 Marathon Initialized Successfully
 
 Spec File: <spec_path>
@@ -145,13 +169,13 @@ Total Issues: <issue_count>
 Starting coding loop...
 ```
 
-Proceed to Step 8.
+Proceed to Step 7.
 
-### Step 8: Run Coding Loop
+### Step 7: Run Coding Loop
 
 The coding loop works on one issue at a time. Currently, it processes ONE issue per invocation (hooks in Group 6 will enable automatic continuation).
 
-#### 8.1: Run Verification Agent
+#### 7.1: Run Verification Agent
 
 **Run verify-agent** to check codebase health:
 
@@ -165,14 +189,14 @@ Use the Agent tool to run `marathon-verify`:
 - The verify-agent creates a bug issue in Linear
 - Report: "Verification failed. Bug issue created: [ID]. This must be fixed before new work."
 - Set `current_issue` in state to the bug issue
-- Proceed to step 8.3 (plan the fix)
+- Proceed to step 7.3 (plan the fix)
 
 **If verification passes:**
 
 - Report: "Verification passed. Fetching next issue..."
-- Proceed to step 8.2
+- Proceed to step 7.2
 
-#### 8.2: Get Next Issue from Linear
+#### 7.2: Get Next Issue from Linear
 
 Query Linear for the next Todo issue to work on:
 
@@ -194,7 +218,7 @@ Query Linear for the next Todo issue to work on:
 
 - Report:
 
-  ```
+  ```markdown
   Marathon Complete!
 
   All issues have been processed.
@@ -223,9 +247,9 @@ Query Linear for the next Todo issue to work on:
   }
   ```
 
-- Proceed to step 8.3
+- Proceed to step 7.3
 
-#### 8.3: Run Plan Agent
+#### 7.3: Run Plan Agent
 
 **Run plan-agent** for the current issue:
 
@@ -237,7 +261,7 @@ Use the Agent tool to run `marathon-plan`:
 
 Store the plan for the code agent.
 
-#### 8.4: Run Code Agent
+#### 7.4: Run Code Agent
 
 **Run code-agent** to implement the feature:
 
@@ -252,13 +276,13 @@ Use the Agent tool to run `marathon-code`:
 
 - Report the failure
 - Keep issue as "In Progress" for retry
-- Exit (user can retry by running /marathon-ralph:start again)
+- Exit (user can retry by running /marathon-ralph:run again)
 
 **If implementation succeeds:**
 
-- Proceed to step 8.5 (test-agent)
+- Proceed to step 7.5 (test-agent)
 
-#### 8.5: Run Test Agent
+#### 7.5: Run Test Agent
 
 **Run test-agent** to write tests for the implementation:
 
@@ -277,9 +301,9 @@ Use the Agent tool to run `marathon-test`:
 
 **If tests pass:**
 
-- Proceed to step 8.6 (qa-agent)
+- Proceed to step 7.6 (qa-agent)
 
-#### 8.6: Run QA Agent
+#### 7.6: Run QA Agent
 
 **Run qa-agent** to create E2E tests (for web projects):
 
@@ -311,7 +335,7 @@ Use the Agent tool to run `marathon-qa`:
   }
   ```
 
-#### 8.7: Update META Issue
+#### 7.7: Update META Issue
 
 Add a session note to the META issue in Linear:
 
@@ -319,18 +343,21 @@ Add a session note to the META issue in Linear:
 ## Session Update - <timestamp>
 
 ### Issue Completed
+
 - [ISSUE-ID] <title>
 
 ### Changes Made
+
 - <commit message summary>
 
 ### Notes
+
 - <any relevant notes>
 ```
 
-#### 8.8: Report Progress
+#### 7.8: Report Progress
 
-```
+```markdown
 Issue Completed: [ISSUE-ID] <title>
 
 Commits:
@@ -340,16 +367,16 @@ Commits:
 
 Progress: <completed>/<total> issues done
 
-Note: Run /marathon-ralph:start again to continue with the next issue,
-or the Stop hook will continue automatically in future sessions.
+Note: Run /marathon-ralph:run again to continue with the next issue,
+or the Stop hook will continue automatically.
 ```
 
-**Note:** Currently the loop stops after ONE issue. In Group 6, hooks will enable automatic continuation.
+**Note:** Currently the loop stops after ONE issue. The Stop hook enables automatic continuation.
 
 ## Error Handling
 
-- If spec file not provided: Request spec file path
-- If spec file not found: Report file not found error
+- If no marathon and no spec file: Explain how to start
+- If spec file not found: Search by filename, ask user if multiple matches
 - If Linear MCP not connected: setup-agent will provide instructions
 - If authentication fails: setup-agent will provide re-auth instructions
 - If Linear project creation fails: init-agent will report the issue
@@ -360,30 +387,39 @@ or the Stop hook will continue automatically in future sessions.
 
 ## Resume Behavior
 
-When resuming from an interrupted session:
-
-| Current Phase | Action |
-|---------------|--------|
-| setup | Re-run setup-agent, then init-agent, then coding loop |
-| init | Re-run init-agent, then coding loop |
-| coding | Resume coding loop (verify → get issue → plan → code → test → qa) |
-| complete | Ask user confirmation to start new marathon |
+| Current Phase | Action                                                         | Spec Required? |
+| ------------- | -------------------------------------------------------------- | -------------- |
+| coding        | Resume coding loop (verify -> get issue -> plan -> code -> test -> qa) | No             |
+| setup         | Re-run init-agent, then coding loop                            | No (in state)  |
+| init          | Re-run init-agent, then coding loop                            | No (in state)  |
+| complete      | Ask to start new marathon                                      | Yes            |
+| (no state)    | Start fresh marathon                                           | Yes            |
 
 ## State File Updates
 
 The state file is updated at these points:
 
-- After setup: phase: "setup", spec_file added
+- After setup: phase: "setup", spec_file added, session_id added
 - After init: phase: "coding", linear metadata added
 - When starting issue: current_issue set, in_progress incremented
 - When completing issue: current_issue cleared, completed incremented
 - When all done: phase: "complete", active: false
 
+## Session Scoping
+
+The `session_id` field in the state file enables session-scoped marathons:
+
+- When a marathon starts, the current session's ID is stored in the state file
+- The Stop hook only blocks exit for the session that started the marathon
+- Other Claude sessions working in the same directory are NOT affected
+- This prevents cross-session interference when running multiple sessions
+
 ## Notes
 
-- The spec file should be a markdown file describing the project requirements
-- This command orchestrates the full flow: setup → init → coding loop
-- One issue is processed per invocation (automatic continuation comes in Group 6)
+- The spec file is only required when starting a new marathon
+- Resuming an existing marathon requires no arguments
+- This command orchestrates the full flow: setup -> init -> coding loop
+- One issue is processed per invocation (Stop hook enables continuation)
 - All Linear project/issue creation happens in the init-agent
 - The verify-agent ensures code health before each new issue
 - The plan-agent creates implementation plans
