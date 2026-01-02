@@ -1,0 +1,15 @@
+{
+    "name": "webapp-starter",
+    "description": "Commands, Agents and Hooks for building Websites.",
+    "version": "1.0.0",
+    "author": {
+        "name": "Halans",
+        "email": "nowhere@halans.dev"
+    },
+    "mcpServers": {
+        "shadcn": {
+            "command": "npx",
+            "args": ["shadcn@latest", "mcp"]
+        }
+    }
+}

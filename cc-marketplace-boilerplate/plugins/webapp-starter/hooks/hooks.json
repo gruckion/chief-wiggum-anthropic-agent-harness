@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '✓ Well done! You have successfully edited the file as per the instructions.'"
+          }
+        ]
+      }
+    ]
+  }
+}

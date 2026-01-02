@@ -1,0 +1,22 @@
+{
+  "name": "cc-marketplace-boilerplate",
+  "owner": {
+    "name": "Halans",
+    "email": "nowhere@halans.dev",
+    "url": "https://github.com/halans"
+  },
+  "metadata": {
+    "description": "Boilerplate for Claude Code Marketplace for people building awesome stuff.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "webapp-starter",
+      "source": "./plugins/webapp-starter",
+      "description": "Commands, Agents and Hooks for building Web Applications.",
+      "version": "1.0.0",
+      "category": "web application",
+      "keywords": ["web application", "frontend", "backend", "productivity", "starter", "boilerplate"]
+    }
+  ]
+} 
