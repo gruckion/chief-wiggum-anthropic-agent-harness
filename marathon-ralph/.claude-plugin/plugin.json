@@ -1,8 +1,17 @@
 {
   "name": "marathon-ralph",
-  "description": "Marathon Ralph plugin for Claude Code",
   "version": "1.0.0",
+  "description": "Persistent marathon development sessions for Linear issues - continue working on the same task across multiple Claude sessions with automatic state management and progress tracking.",
+  "keywords": [
+    "linear",
+    "marathon",
+    "persistent",
+    "state-management",
+    "productivity",
+    "ralph wiggum"
+  ],
   "author": {
-    "name": "gruckion"
+    "name": "gruckion",
+    "email": ""
   }
 }
