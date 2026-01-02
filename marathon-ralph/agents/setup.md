@@ -11,34 +11,62 @@ Your job is to verify the environment is ready for autonomous development.
 
 ## Steps
 
-### 1. Check Linear MCP Availability
+### 1. Check LINEAR_API_KEY Environment Variable
 
-Look for Linear MCP tools by checking if `mcp__linear__*` tools are available. You can do this by attempting to use a Linear MCP tool or by checking the available tools in your environment.
+First, verify the LINEAR_API_KEY is available in the environment:
 
-### 2. If Linear MCP is NOT Available
+```bash
+echo "LINEAR_API_KEY is set: ${LINEAR_API_KEY:+yes}"
+```
+
+If not set, check for a `.env` file in the project root and inform the user to source it:
+
+```bash
+source .env
+```
+
+### 2. Check Linear MCP Availability
+
+The plugin uses `@tacticlaunch/mcp-linear` which provides these tools:
+
+- `mcp__linear__*` tools for issue, project, and team management
+
+Try to use a Linear MCP tool to verify the connection. The available tools include:
+
+- Issue management (create, update, search issues)
+- Project operations (create projects, get project info)
+- Team management (get teams)
+
+### 3. If Linear MCP is NOT Available
 
 Provide these setup instructions:
 
 ```markdown
-Linear MCP is not connected. To set up:
+Linear MCP is not connected. The marathon-ralph plugin uses @tacticlaunch/mcp-linear.
 
-1. Add Linear MCP server:
-   claude mcp add --transport http linear https://mcp.linear.app/mcp
+To set up:
 
-2. Authenticate with Linear:
-   Run /mcp, select Linear, and complete the OAuth flow
+1. Ensure LINEAR_API_KEY is set in your environment:
+   - Create a .env file with: LINEAR_API_KEY=lin_api_xxxxx
+   - Or export directly: export LINEAR_API_KEY=lin_api_xxxxx
 
-3. Re-run /marathon-ralph:start after authentication
+2. Get your API key from Linear:
+   - Go to linear.app → Settings → Security & access → Personal API Keys
+   - Create a new key and copy it
+
+3. The plugin's .mcp.json will auto-configure the Linear MCP server
+
+4. Re-run /marathon-ralph:start after setting up the API key
 ```
 
-### 3. If Linear MCP IS Available
+### 4. If Linear MCP IS Available
 
-Verify authentication by attempting a simple Linear query:
+Verify authentication by attempting to list teams:
 
-- Try to list teams using the Linear MCP tools
+- Use the Linear MCP tools to get team information
 - If the query succeeds, Linear is properly authenticated
 
-### 4. Create State File
+### 5. Create State File
 
 If Linear is connected and authenticated:
 
@@ -59,14 +87,15 @@ If Linear is connected and authenticated:
    }
    ```
 
-### 5. Report Status
+### 6. Report Status
 
 **On Success:**
 
 ```markdown
 Marathon Ralph Setup Complete
 
-Linear MCP: Connected and authenticated
+Linear MCP: Connected via @tacticlaunch/mcp-linear
+API Key: Configured from LINEAR_API_KEY
 State file: .claude/marathon-ralph.json created
 Phase: setup
 
@@ -80,4 +109,9 @@ Marathon Ralph Setup Failed
 
 Issue: <specific issue>
 Resolution: <specific steps to fix>
+
+Common issues:
+- LINEAR_API_KEY not set → Run: source .env
+- Invalid API key → Generate new key at linear.app/settings
+- MCP server not started → Check plugin .mcp.json configuration
 ```

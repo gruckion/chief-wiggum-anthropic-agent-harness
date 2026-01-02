@@ -14,22 +14,50 @@ Marathon Ralph extends the [Chief Wiggum](../chief-wiggum/) iterative developmen
 
 ## Prerequisites
 
-### Linear MCP Setup
+### Linear API Key Setup
 
-Marathon Ralph requires the Linear MCP server to be configured:
+Marathon Ralph requires a Linear API key to connect to your Linear workspace.
 
-1. Add Linear MCP server:
+#### Step 1: Get your Linear API Key
 
-   ```bash
-   claude mcp add --transport http linear https://mcp.linear.app/mcp
-   ```
+1. Go to [linear.app](https://linear.app) and log in
+2. Navigate to **Settings** → **Security & access** → **Personal API Keys**
+3. Click **New API Key**, give it a name (e.g., "Marathon Ralph")
+4. Copy the generated key (you won't be able to see it again!)
 
-2. Authenticate via OAuth:
+#### Step 2: Configure the API key
 
-   ```
-   /mcp
-   # Select Linear -> Authenticate -> Complete browser OAuth flow
-   ```
+Create a `.env` file in your project root:
+
+```bash
+LINEAR_API_KEY=lin_api_your_key_here
+```
+
+#### Step 3: Add the Linear MCP Server
+
+Run this command to add the Linear MCP server with your API key:
+
+```bash
+source .env  # Load the API key
+claude mcp add --transport http linear https://mcp.linear.app/mcp \
+  --header "Authorization: Bearer $LINEAR_API_KEY"
+```
+
+#### Step 4: Restart Claude Code
+
+**Important:** MCP servers are loaded when Claude starts. After adding the server, you must restart Claude Code for the changes to take effect:
+
+1. Exit your current Claude session
+2. Start a new session: `source .env && claude`
+3. Verify the Linear server is connected: `claude mcp list`
+
+You should see:
+
+```
+linear: https://mcp.linear.app/mcp (HTTP) - ✓ Connected
+```
+
+Now you're ready to run a marathon!
 
 ## Quick Start
 
@@ -360,6 +388,7 @@ marathon-ralph/
 ├── .claude-plugin/       # Plugin metadata
 │   ├── plugin.json       # Plugin name, version, description
 │   └── marketplace.json  # Marketplace listing info
+├── .mcp.json             # MCP server configuration (Linear)
 ├── agents/               # Subagent definitions
 │   ├── setup.md          # Environment verification
 │   ├── init.md           # Project initialization
@@ -483,25 +512,32 @@ The `hooks.json` configuration:
 
 **Solution**:
 
-1. Verify Linear MCP is added:
+1. Verify LINEAR_API_KEY is set:
 
    ```bash
-   claude mcp list
+   echo $LINEAR_API_KEY
    ```
 
-2. If not listed, add it:
+2. If not set, source your .env file:
 
    ```bash
-   claude mcp add --transport http linear https://mcp.linear.app/mcp
+   source .env
    ```
 
-3. Authenticate:
+3. If you don't have an API key, get one from:
+   - linear.app → Settings → Security & access → Personal API Keys
 
-   ```
-   /mcp
-   ```
+4. The plugin's `.mcp.json` will automatically configure the Linear MCP server.
 
-   Select Linear and complete OAuth flow.
+### Invalid or Expired API Key
+
+**Symptom**: Linear operations fail with authentication errors
+
+**Solution**:
+
+1. Generate a new API key from Linear settings
+2. Update your `.env` file or environment variable
+3. Restart your Claude Code session
 
 ### Marathon Stuck in Coding Phase
 
