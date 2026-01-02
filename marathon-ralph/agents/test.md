@@ -21,6 +21,7 @@ git log -1 --name-only --pretty=format:"Commit: %h%nMessage: %s%n%nFiles:"
 ```
 
 Read each file that was modified or created to understand:
+
 - What functionality was added
 - What functions/components need testing
 - What edge cases exist
@@ -28,6 +29,7 @@ Read each file that was modified or created to understand:
 ### 2. Review Requirements
 
 Read the Linear issue for acceptance criteria:
+
 - Each acceptance criterion should have corresponding test coverage
 - Identify testable behaviors and expected outcomes
 - Note any edge cases mentioned in requirements
@@ -37,12 +39,14 @@ Read the Linear issue for acceptance criteria:
 Discover existing test patterns in the codebase:
 
 **Find test files:**
+
 ```bash
 # Look for existing test files
 find . -type f \( -name "*.test.ts" -o -name "*.test.js" -o -name "*.spec.ts" -o -name "*.spec.js" -o -name "test_*.py" -o -name "*_test.py" \) | head -20
 ```
 
 **Check test configuration:**
+
 ```bash
 # Node.js - check Jest/Vitest config
 cat jest.config.js vitest.config.ts 2>/dev/null | head -30 || true
@@ -52,6 +56,7 @@ cat pytest.ini pyproject.toml 2>/dev/null | grep -A 20 "\[tool.pytest" || true
 ```
 
 **Read a few existing tests** to understand:
+
 - Testing framework used (Jest, Vitest, Mocha, pytest, etc.)
 - Test organization and naming conventions
 - Mocking patterns
@@ -62,24 +67,28 @@ cat pytest.ini pyproject.toml 2>/dev/null | grep -A 20 "\[tool.pytest" || true
 Create tests covering:
 
 #### Unit Tests
+
 - Individual functions/methods
 - Pure logic and calculations
 - Input validation
 - Edge cases and boundary conditions
 
 #### Integration Tests
+
 - Component interactions
 - API endpoint behavior
 - Database operations (if applicable)
 - Service integrations
 
 #### Test Categories
+
 - **Happy path**: Normal, expected usage
 - **Error handling**: What happens when things go wrong
 - **Edge cases**: Boundary conditions, null values, empty inputs
 - **Failure scenarios**: Invalid inputs, network errors, etc.
 
 **File placement:**
+
 - Follow the project's existing test structure
 - Common patterns:
   - `__tests__/` directory
@@ -88,6 +97,7 @@ Create tests covering:
   - `test_*.py` in `tests/` directory
 
 **Example test structure (TypeScript/Jest):**
+
 ```typescript
 describe('FeatureName', () => {
   describe('functionName', () => {
@@ -114,6 +124,7 @@ describe('FeatureName', () => {
 ```
 
 **Example test structure (Python/pytest):**
+
 ```python
 import pytest
 from module import function_name
@@ -137,6 +148,7 @@ class TestFeatureName:
 ### 5. Verify
 
 **Run the new tests:**
+
 ```bash
 # Node.js
 npm test -- --testPathPattern="<pattern>" 2>&1
@@ -146,6 +158,7 @@ pytest -v -k "<pattern>" 2>&1
 ```
 
 **Ensure all tests pass:**
+
 ```bash
 # Run full test suite to check for regressions
 npm test 2>&1
@@ -155,6 +168,7 @@ pytest -v 2>&1
 ```
 
 If tests fail:
+
 - Debug and fix the test code
 - Ensure you're testing correctly, not incorrectly asserting
 - If implementation has a bug, note it (don't fix - that's code-agent's job)

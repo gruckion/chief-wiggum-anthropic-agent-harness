@@ -27,6 +27,7 @@ ls -la src/pages src/app pages app public index.html 2>/dev/null || true
 ```
 
 **Web project indicators:**
+
 - Framework: React, Vue, Next.js, Nuxt, Angular, Svelte
 - Files: `pages/`, `app/`, `public/`, `index.html`
 - E2E setup: Playwright or Cypress config
@@ -34,11 +35,13 @@ ls -la src/pages src/app pages app public index.html 2>/dev/null || true
 ### 2. Non-Web Project
 
 If this is NOT a web project:
+
 - No web framework detected
 - No browser-based UI
 - CLI tool, library, or API-only project
 
 **Report and exit:**
+
 ```
 Skipping E2E: not a web project
 
@@ -62,11 +65,13 @@ If this IS a web project, proceed with E2E tests:
 Understand the user-facing behavior:
 
 **Read the Linear issue:**
+
 - What user actions are involved?
 - What should the user see/experience?
 - What are the acceptance criteria from a user perspective?
 
 **Identify user flows to test:**
+
 - Main happy path flow
 - Error states the user might encounter
 - Edge cases in user interaction
@@ -76,16 +81,19 @@ Understand the user-facing behavior:
 Detect and use the project's E2E framework:
 
 **Playwright:**
+
 - Config: `playwright.config.ts` or `playwright.config.js`
 - Tests: `tests/e2e/*.spec.ts`, `e2e/*.spec.ts`, or `tests/*.spec.ts`
 - Run: `npx playwright test`
 
 **Cypress:**
+
 - Config: `cypress.config.ts` or `cypress.config.js`
 - Tests: `cypress/e2e/*.cy.ts` or `cypress/e2e/*.cy.js`
 - Run: `npx cypress run`
 
 **Read existing E2E tests** to understand:
+
 - Test organization and naming
 - Page object patterns (if used)
 - Common selectors and helpers
@@ -96,6 +104,7 @@ Detect and use the project's E2E framework:
 Create E2E tests that simulate real user behavior:
 
 **Playwright example:**
+
 ```typescript
 import { test, expect } from '@playwright/test';
 
@@ -125,6 +134,7 @@ test.describe('Feature Name', () => {
 ```
 
 **Cypress example:**
+
 ```typescript
 describe('Feature Name', () => {
   it('user can complete [action] flow', () => {
@@ -152,6 +162,7 @@ describe('Feature Name', () => {
 ```
 
 **BDD style comments:**
+
 ```typescript
 test('user can complete checkout flow', async ({ page }) => {
   // Given: user has items in cart
@@ -161,6 +172,7 @@ test('user can complete checkout flow', async ({ page }) => {
 ```
 
 **Test guidelines:**
+
 - Use descriptive test names that explain user intent
 - Include setup and teardown if needed
 - Use data-testid attributes for reliable selectors
@@ -180,6 +192,7 @@ npx cypress run 2>&1
 ```
 
 **Note:** E2E tests may need the app running. Check if needed:
+
 ```bash
 # Check if app needs to be running
 cat playwright.config.ts 2>/dev/null | grep -E "webServer|baseURL" || true
@@ -187,6 +200,7 @@ cat cypress.config.ts 2>/dev/null | grep -E "baseUrl" || true
 ```
 
 If the app needs to be running:
+
 ```bash
 # Start in background and run tests
 npm run dev &
@@ -196,6 +210,7 @@ kill %1
 ```
 
 **Fix flaky tests:**
+
 - Add appropriate waits for dynamic content
 - Use stable selectors
 - Handle loading states

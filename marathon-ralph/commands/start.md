@@ -13,6 +13,7 @@ Start a new marathon development session from a specification file, or resume an
 $ARGUMENTS
 
 Expected formats:
+
 - `--spec-file <path>`
 - `<path>` (direct path to spec file)
 
@@ -21,6 +22,7 @@ Expected formats:
 ### Step 1: Parse Spec File Path
 
 Extract the spec file path from the arguments:
+
 - If argument starts with `--spec-file`, use the following value
 - Otherwise, treat the entire argument as the path
 - If no path provided, report error: "Please provide a spec file path: /marathon-ralph:start --spec-file <path>"
@@ -28,6 +30,7 @@ Extract the spec file path from the arguments:
 ### Step 2: Validate Spec File Exists
 
 Use Bash to check if the spec file exists:
+
 ```bash
 test -f "<spec_path>" && echo "EXISTS" || echo "NOT_FOUND"
 ```
@@ -37,6 +40,7 @@ If NOT_FOUND, report error: "Spec file not found: <spec_path>"
 ### Step 3: Check Existing Marathon State
 
 Check if `.claude/marathon-ralph.json` exists:
+
 ```bash
 test -f .claude/marathon-ralph.json && echo "EXISTS" || echo "NOT_FOUND"
 ```
@@ -83,6 +87,7 @@ Proceed to Step 5
 
 3. **If setup succeeds:**
    Update the state file to include the spec file path:
+
    ```json
    {
      "active": true,
@@ -96,6 +101,7 @@ Proceed to Step 5
 ### Step 6: Run Init Agent
 
 1. **Update phase to "init":**
+
    ```json
    {
      "active": true,
@@ -150,16 +156,19 @@ The coding loop works on one issue at a time. Currently, it processes ONE issue 
 **Run verify-agent** to check codebase health:
 
 Use the Agent tool to run `marathon-verify`:
+
 - The agent runs tests, lint, and type checks
 - Returns status: pass/fail and details
 
 **If verification fails:**
+
 - The verify-agent creates a bug issue in Linear
 - Report: "Verification failed. Bug issue created: [ID]. This must be fixed before new work."
 - Set `current_issue` in state to the bug issue
 - Proceed to step 8.3 (plan the fix)
 
 **If verification passes:**
+
 - Report: "Verification passed. Fetching next issue..."
 - Proceed to step 8.2
 
@@ -172,7 +181,9 @@ Query Linear for the next Todo issue to work on:
 3. **Select the first issue** (highest priority, oldest)
 
 **If no issues remain (all done or in other states):**
+
 - Update state file:
+
   ```json
   {
     "active": false,
@@ -180,7 +191,9 @@ Query Linear for the next Todo issue to work on:
     ...
   }
   ```
+
 - Report:
+
   ```
   Marathon Complete!
 
@@ -192,11 +205,14 @@ Query Linear for the next Todo issue to work on:
 
   The marathon is finished.
   ```
+
 - Exit - marathon is complete.
 
 **If issue found:**
+
 - Mark the issue as "In Progress" in Linear
 - Update state file with current_issue:
+
   ```json
   {
     "current_issue": {
@@ -206,6 +222,7 @@ Query Linear for the next Todo issue to work on:
     "last_updated": "<timestamp>"
   }
   ```
+
 - Proceed to step 8.3
 
 #### 8.3: Run Plan Agent
@@ -213,6 +230,7 @@ Query Linear for the next Todo issue to work on:
 **Run plan-agent** for the current issue:
 
 Use the Agent tool to run `marathon-plan`:
+
 - Pass the current issue ID and details
 - The agent explores the codebase
 - Returns an implementation plan
@@ -224,17 +242,20 @@ Store the plan for the code agent.
 **Run code-agent** to implement the feature:
 
 Use the Agent tool to run `marathon-code`:
+
 - Pass the implementation plan
 - Pass the current issue details
 - The agent implements the feature
 - Creates a commit
 
 **If implementation fails:**
+
 - Report the failure
 - Keep issue as "In Progress" for retry
 - Exit (user can retry by running /marathon-ralph:start again)
 
 **If implementation succeeds:**
+
 - Proceed to step 8.5 (test-agent)
 
 #### 8.5: Run Test Agent
@@ -242,17 +263,20 @@ Use the Agent tool to run `marathon-code`:
 **Run test-agent** to write tests for the implementation:
 
 Use the Agent tool to run `marathon-test`:
+
 - The agent reviews the implementation from code-agent
 - Writes unit tests for new code
 - Writes integration tests if applicable
 - Creates a commit with the tests
 
 **If test writing fails:**
+
 - Report the failure
 - Keep issue as "In Progress" for retry
 - Exit (user can retry)
 
 **If tests pass:**
+
 - Proceed to step 8.6 (qa-agent)
 
 #### 8.6: Run QA Agent
@@ -260,19 +284,23 @@ Use the Agent tool to run `marathon-test`:
 **Run qa-agent** to create E2E tests (for web projects):
 
 Use the Agent tool to run `marathon-qa`:
+
 - The agent checks if this is a web project
 - If not a web project: Skips with message and proceeds
 - If web project: Creates E2E tests for the feature
 - Creates a commit with E2E tests (if applicable)
 
 **If E2E tests fail:**
+
 - Report the failure
 - Keep issue as "In Progress" for retry
 - Exit (user can retry)
 
 **If E2E tests pass (or skipped for non-web):**
+
 - Mark the issue as "Done" in Linear
 - Update stats in state file:
+
   ```json
   {
     "stats": {
@@ -344,6 +372,7 @@ When resuming from an interrupted session:
 ## State File Updates
 
 The state file is updated at these points:
+
 - After setup: phase: "setup", spec_file added
 - After init: phase: "coding", linear metadata added
 - When starting issue: current_issue set, in_progress incremented

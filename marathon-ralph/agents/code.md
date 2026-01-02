@@ -14,6 +14,7 @@ Your job is to implement the feature according to the provided plan. You write c
 ## Input
 
 You will receive:
+
 - The implementation plan from the plan-agent
 - Current issue ID and details
 - Access to the full codebase
@@ -48,6 +49,7 @@ cat CONTRIBUTING.md 2>/dev/null || true
 ```
 
 **Code standards:**
+
 - Follow existing project conventions
 - Match the style of surrounding code
 - Use consistent naming patterns
@@ -56,6 +58,7 @@ cat CONTRIBUTING.md 2>/dev/null || true
 - Prefer clarity over cleverness
 
 **File organization:**
+
 - Place new files in appropriate directories
 - Follow the project's file structure patterns
 - Use descriptive file names
@@ -84,6 +87,7 @@ For each step in the plan:
 After implementing all steps:
 
 1. **Run the application:**
+
    ```bash
    # Node.js
    npm run dev 2>&1 | head -20
@@ -134,6 +138,7 @@ EOF
 ```
 
 **Commit message guidelines:**
+
 - Use conventional commit types: `feat:`, `fix:`, `refactor:`, `chore:`
 - Keep the first line under 72 characters
 - List specific changes in bullet points

@@ -211,6 +211,7 @@ Progress: [===========>        ] 55% (17/31 issues)
 - Empty characters: remaining space
 
 Example calculation for 55%:
+
 - Filled = floor(55 / 5) = 11 characters
 - Display: `[===========>        ]`
 

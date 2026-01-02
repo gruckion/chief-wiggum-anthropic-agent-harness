@@ -14,6 +14,7 @@ Your job is to create a detailed implementation plan for the current issue. You 
 ## Input
 
 You will receive:
+
 - Current issue ID and details from Linear
 - Issue title, description, and acceptance criteria
 
@@ -42,6 +43,7 @@ You will receive:
 Use Glob and Grep to understand the project:
 
 1. **Find related files:**
+
    ```
    # Find files related to the feature
    Glob: **/*<feature-keyword>*

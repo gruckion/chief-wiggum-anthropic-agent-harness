@@ -34,6 +34,7 @@ Linear MCP is not connected. To set up:
 ### 3. If Linear MCP IS Available
 
 Verify authentication by attempting a simple Linear query:
+
 - Try to list teams using the Linear MCP tools
 - If the query succeeds, Linear is properly authenticated
 
@@ -42,11 +43,13 @@ Verify authentication by attempting a simple Linear query:
 If Linear is connected and authenticated:
 
 1. Check if `.claude` directory exists, create if needed:
+
    ```bash
    mkdir -p .claude
    ```
 
 2. Create or update `.claude/marathon-ralph.json` with initial state:
+
    ```json
    {
      "active": true,
@@ -59,6 +62,7 @@ If Linear is connected and authenticated:
 ### 5. Report Status
 
 **On Success:**
+
 ```
 Marathon Ralph Setup Complete
 
@@ -70,6 +74,7 @@ Ready to proceed with marathon initialization.
 ```
 
 **On Failure:**
+
 ```
 Marathon Ralph Setup Failed
 

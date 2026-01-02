@@ -56,6 +56,7 @@ Each issue MUST include:
    - Any dependencies on other issues
 
 3. **Acceptance criteria (as checkboxes)**
+
    ```
    - [ ] User can enter email and password
    - [ ] Form validates input before submission
@@ -64,6 +65,7 @@ Each issue MUST include:
    ```
 
 4. **Test steps for verification**
+
    ```
    Test Steps:
    1. Navigate to /signup
@@ -75,6 +77,7 @@ Each issue MUST include:
 ### META Issue
 
 Create a special issue titled `[META] Project Progress Tracker` with:
+
 - Project overview and goals
 - Link to original specification
 - Section for session handoff notes
@@ -91,6 +94,7 @@ If this is a new project with no existing code (empty directory or only spec fil
 
 2. **Generate init.sh script**
    Create an executable script that bootstraps the project:
+
    ```bash
    #!/bin/bash
    # Project initialization script
@@ -115,6 +119,7 @@ If this is a new project with no existing code (empty directory or only spec fil
 ## Phase 5: Finalize
 
 1. **Initialize git repository** (if not exists)
+
    ```bash
    git init
    git add .
@@ -122,6 +127,7 @@ If this is a new project with no existing code (empty directory or only spec fil
    ```
 
 2. **Update state file** (`.claude/marathon-ralph.json`):
+
    ```json
    {
      "active": true,
@@ -141,6 +147,7 @@ If this is a new project with no existing code (empty directory or only spec fil
    ```
 
 3. **Report summary**:
+
    ```
    Marathon Initialization Complete
 
