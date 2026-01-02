@@ -1,0 +1,8 @@
+{
+  "name": "marathon-ralph",
+  "description": "Marathon Ralph plugin for Claude Code",
+  "version": "1.0.0",
+  "author": {
+    "name": "gruckion"
+  }
+}
