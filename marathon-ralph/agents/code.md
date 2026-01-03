@@ -3,6 +3,7 @@ name: marathon-code
 description: Implement the current feature following the implementation plan.
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: opus
+skills: visual-verification
 ---
 
 # Marathon Code Agent
@@ -116,7 +117,11 @@ After implementing all steps:
    - If the plan was wrong, document the correction
    - Ensure the feature is functional before committing
 
-### 5. Commit Changes
+### 5. Visual Verification (MANDATORY for Web Projects)
+
+Use the `visual-verification` skill to verify the feature works in the browser before committing.
+
+### 6. Commit Changes
 
 Create a commit with the following format:
 

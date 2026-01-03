@@ -37,3 +37,5 @@
 - [ ] **Item 7**: Create a universal testing framework abstraction. Currently agents reference `vitest`, `jest`, `pytest` directly, but projects could be Python, Node, Rust, Go, etc. Need a single unified interface (like `ni` but cross-language):
 
 - [ ] **Item 8**: Review agent to ensure it actually uses claude code chrome extension not playwright and manually checks the app via the browser. Check the ~/.claude/projects/
+
+- [ ] **Item 9**: Switch playwright MCP to <https://github.com/vibheksoni/stealth-browser-mcp>
