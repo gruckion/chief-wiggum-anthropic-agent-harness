@@ -216,24 +216,38 @@ class TestFeatureName:
 
 ### 5. Verify
 
+**Get commands from state file:**
+
+Read `.claude/marathon-ralph.json` and extract:
+
+- `project.commands.test` - Command to run all tests
+- `project.commands.testWorkspace` - Command template for workspace-specific tests (replace `{workspace}`)
+- `project.monorepo.type` - Monorepo type (turbo, nx, etc.) or "none"
+
 **Run the new tests:**
 
-```bash
-# Node.js
-npm test -- --testPathPattern="<pattern>" 2>&1
+Use the cached test command from state, with appropriate filtering:
 
-# Python
-pytest -v -k "<pattern>" 2>&1
+```bash
+# For monorepos - use testWorkspace command with specific workspace
+# e.g., bun run --filter=web test 2>&1
+
+# For single-package projects - use test command
+# e.g., bun run test 2>&1
+```
+
+**If state has no project commands**, run detection first:
+
+```bash
+./marathon-ralph/skills/project-detection/scripts/detect.sh <project_dir>
 ```
 
 **Ensure all tests pass:**
 
 ```bash
-# Run full test suite to check for regressions
-npm test 2>&1
-
-# or
-pytest -v 2>&1
+# Run full test suite using the cached test command
+# For monorepos: Use "turbo run test" or equivalent from state
+# For single packages: Use the test command from state
 ```
 
 If tests fail:
@@ -322,3 +336,27 @@ If you encounter issues:
 3. **No testable code:**
    - Report "No testable units identified"
    - Explain why (configuration only, no logic, etc.)
+
+4. **Command returns empty output or times out (CIRCUIT BREAKER):**
+   - Do NOT retry the same command more than 3 times
+   - Check if the script exists in package.json
+   - For monorepos, verify you're using the correct workspace filter
+   - Try alternative commands:
+     - `bun run --filter=<workspace> test` for Turborepo
+     - `turbo run test` for all workspaces
+     - Check `project.commands` in state for correct command
+   - If still failing after 3 attempts, STOP and report:
+
+     ```markdown
+     ## Test Command Failed
+
+     Command tried: [command]
+     Output: [empty/timeout/error]
+
+     Diagnostic checks:
+     - Script exists in package.json: YES/NO
+     - Monorepo detected: YES/NO
+     - Workspaces: [list]
+
+     Recommendation: [what to try next]
+     ```

@@ -17,17 +17,20 @@ Configure Playwright as the end-to-end testing framework with fixtures and best 
 
 ## Installation
 
-Use `ni` to auto-detect the package manager:
+Use `ni` to auto-detect the package manager. Get the exec command from `.claude/marathon-ralph.json` under `project.commands.exec`:
 
 ```bash
 # Install Playwright
 ni -D @playwright/test
 
-# Install browsers
-npx playwright install --with-deps
+# Install browsers (use exec command from project state: bunx, pnpm exec, npx, etc.)
+# Examples:
+bunx playwright install --with-deps
+# or: pnpm exec playwright install --with-deps
+# or: npx playwright install --with-deps
 
 # For CI optimization, install only needed browsers
-npx playwright install chromium --with-deps
+bunx playwright install chromium --with-deps
 ```
 
 ## Configuration
@@ -131,8 +134,10 @@ export default defineConfig({
   ],
 
   // Run dev server before tests
+  // IMPORTANT: Use the dev command from your package manager
+  // Get from project state: project.commands.dev
   webServer: {
-    command: 'npm run dev',
+    command: process.env.DEV_COMMAND || 'bun run dev', // Adjust based on package manager
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
@@ -293,6 +298,8 @@ export class LoginPage {
 
 Create `.github/workflows/playwright.yml`:
 
+**Adjust commands based on your package manager** (get from `project.commands`):
+
 ```yaml
 name: Playwright Tests
 
@@ -312,16 +319,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          cache: 'npm'
 
+      # For bun projects
+      - uses: oven-sh/setup-bun@v2
+        # if using bun
+
+      # Install dependencies - adjust for your package manager
+      # bun: bun install
+      # pnpm: pnpm install
+      # yarn: yarn install
+      # npm: npm ci
       - name: Install dependencies
-        run: npm ci
+        run: bun install
 
+      # Install Playwright browsers - use your exec command
       - name: Install Playwright Browsers
-        run: npx playwright install chromium --with-deps
+        run: bunx playwright install chromium --with-deps
 
+      # Run tests - use your exec command
       - name: Run Playwright tests
-        run: npx playwright test
+        run: bunx playwright test
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
@@ -368,13 +385,17 @@ nr test:e2e:report
 
 ## CLI Commands Reference
 
+Use your exec command from project state (`bunx`, `pnpm exec`, `npx`, etc.):
+
 | Command | Description |
 |---------|-------------|
-| `npx playwright test` | Run all tests |
-| `npx playwright test --ui` | UI mode |
-| `npx playwright test --headed` | Visible browser |
-| `npx playwright test --debug` | Debug mode |
-| `npx playwright test file.spec.ts` | Run specific file |
-| `npx playwright test --project=chromium` | Run specific project |
-| `npx playwright codegen` | Generate tests |
-| `npx playwright show-report` | Open HTML report |
+| `{exec} playwright test` | Run all tests |
+| `{exec} playwright test --ui` | UI mode |
+| `{exec} playwright test --headed` | Visible browser |
+| `{exec} playwright test --debug` | Debug mode |
+| `{exec} playwright test file.spec.ts` | Run specific file |
+| `{exec} playwright test --project=chromium` | Run specific project |
+| `{exec} playwright codegen` | Generate tests |
+| `{exec} playwright show-report` | Open HTML report |
+
+Replace `{exec}` with your package manager's exec command (e.g., `bunx`, `pnpm exec`, `npx`).

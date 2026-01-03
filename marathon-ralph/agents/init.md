@@ -18,7 +18,43 @@ Your job is to set up a new autonomous development project from a user specifica
 3. Identify all features, components, and requirements
 4. Note technical requirements, stack preferences, and constraints
 
-## Phase 2: Linear Setup
+## Phase 2: Project Detection
+
+Run the project detection skill to identify the project type, package manager, and monorepo structure:
+
+```bash
+./marathon-ralph/skills/project-detection/scripts/detect.sh <project_directory>
+```
+
+This returns JSON with:
+
+- `language`: node, python, go, rust, etc.
+- `packageManager`: bun, pnpm, yarn, npm, poetry, pip, etc.
+- `monorepo`: type (turbo, nx, lerna, etc.) and workspaces list
+- `commands`: Correct install, dev, build, test, lint commands for this project
+
+**Store the results in the state file** under the `project` key:
+
+```json
+{
+  "project": {
+    "language": "node",
+    "packageManager": "bun",
+    "monorepo": { "type": "turbo", "workspaces": ["apps/*", "packages/*"] },
+    "commands": {
+      "install": "bun install",
+      "test": "turbo run test",
+      "testWorkspace": "bun run --filter={workspace} test",
+      ...
+    },
+    "detectedAt": "<timestamp>"
+  }
+}
+```
+
+This cached project info is used by all other agents to run correct commands.
+
+## Phase 3: Linear Setup
 
 1. Query Linear for available teams using Linear MCP tools (look for tools like `mcp__linear__get_teams` or similar)
 2. If multiple teams exist:
@@ -29,7 +65,7 @@ Your job is to set up a new autonomous development project from a user specifica
    - Use a descriptive name based on the spec (e.g., "My Todo App - Marathon Build")
    - Associate it with the selected team
 
-## Phase 3: Issue Creation
+## Phase 4: Issue Creation
 
 Break down the specification into discrete, implementable issues. Create them in priority order:
 
@@ -59,7 +95,7 @@ Each issue MUST include:
 
 3. **Acceptance criteria (as checkboxes)**
 
-   ```
+   ```markdown
    - [ ] User can enter email and password
    - [ ] Form validates input before submission
    - [ ] Success shows confirmation message
@@ -68,7 +104,7 @@ Each issue MUST include:
 
 4. **Test steps for verification**
 
-   ```
+   ```markdown
    Test Steps:
    1. Navigate to /signup
    2. Enter valid email and password
@@ -85,7 +121,7 @@ Create a special issue titled `[META] Project Progress Tracker` with:
 - Section for session handoff notes
 - Total issue count
 
-## Phase 4: Project Setup (Greenfield Only)
+## Phase 5: Project Setup (Greenfield Only)
 
 If this is a new project with no existing code (empty directory or only spec files):
 
@@ -118,7 +154,7 @@ If this is a new project with no existing code (empty directory or only spec fil
    - Testing approach
    - Code style guidelines
 
-## Phase 5: Finalize
+## Phase 6: Finalize
 
 1. **Initialize git repository** (if not exists)
 
@@ -135,6 +171,13 @@ If this is a new project with no existing code (empty directory or only spec fil
      "active": true,
      "phase": "coding",
      "spec_file": "<path>",
+     "project": {
+       "language": "node",
+       "packageManager": "bun",
+       "monorepo": { "type": "turbo", "workspaces": ["apps/*", "packages/*"] },
+       "commands": { ... },
+       "detectedAt": "<timestamp>"
+     },
      "linear": {
        "team_id": "<team_id>",
        "team_name": "<team_name>",

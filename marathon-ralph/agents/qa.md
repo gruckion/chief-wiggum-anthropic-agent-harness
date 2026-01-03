@@ -258,17 +258,21 @@ export class CheckoutPage {
 
 ### 5. Verify
 
+**Get commands from state file:**
+
+Read `.claude/marathon-ralph.json` and extract `project.commands`:
+
+- `project.commands.exec` - The exec command (bunx, pnpm exec, npx)
+- `project.commands.dev` - The dev server command
+
 **Run E2E tests:**
 
 ```bash
-# Run all E2E tests
-npx playwright test --reporter=list 2>&1
-
-# Run specific file
-npx playwright test feature.spec.ts 2>&1
-
-# Run headed (visible browser)
-npx playwright test --headed 2>&1
+# Use project.commands.exec + playwright test
+# Examples based on package manager:
+# bunx playwright test --reporter=list 2>&1
+# pnpm exec playwright test --reporter=list 2>&1
+# npx playwright test --reporter=list 2>&1
 ```
 
 **Note:** E2E tests may need the app running. Check if configured:
@@ -277,14 +281,16 @@ Use `Grep` to check for server configuration:
 
 - Pattern: `webServer|baseURL` with glob filter `**/playwright.config.*`
 
-If the app needs to be running:
+If the app needs to be running manually:
 
 ```bash
-# Start in background and run tests
-npm run dev &
-sleep 5
-npx playwright test
-kill %1
+# Use project.commands.dev to start the server
+# Then project.commands.exec to run playwright
+# Example for bun:
+# bun run dev &
+# sleep 5
+# bunx playwright test
+# kill %1
 ```
 
 **Fix flaky tests:**

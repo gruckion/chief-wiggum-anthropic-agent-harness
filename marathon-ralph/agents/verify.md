@@ -13,40 +13,51 @@ Your job is to ensure the codebase is healthy before new work begins. This preve
 
 ## Detection Phase
 
-First, detect the project type and available tooling:
+First, get the cached project configuration from the state file.
 
-### 1. Detect Project Type
+### 1. Read Cached Project Config
 
-Use `Glob` to find project config files (works from any directory):
+**State file:** `.claude/marathon-ralph.json`
 
-- `**/package.json` - Node.js project
-- `**/pyproject.toml` - Python project (modern)
-- `**/setup.py` - Python project (legacy)
-- `**/requirements.txt` - Python dependencies
-- `**/Cargo.toml` - Rust project
-- `**/go.mod` - Go project
-- `**/pom.xml` - Java Maven project
-- `**/build.gradle` - Java/Kotlin Gradle project
+Read the `project` object:
 
-- **Node.js**: `package.json` exists
-- **Python**: `pyproject.toml`, `setup.py`, or `requirements.txt` exists
-- **Rust**: `Cargo.toml` exists
-- **Go**: `go.mod` exists
-- **Java**: `pom.xml` or `build.gradle` exists
+```json
+{
+  "project": {
+    "language": "node",
+    "packageManager": "bun",
+    "monorepo": {
+      "type": "turbo",
+      "workspaces": ["apps/*", "packages/*"]
+    },
+    "commands": {
+      "install": "bun install",
+      "test": "turbo run test",
+      "testWorkspace": "bun run --filter={workspace} test",
+      "lint": "bun run lint",
+      "typecheck": "bun run check-types",
+      "exec": "bunx"
+    }
+  }
+}
+```
 
-### 2. Identify Available Commands
+**If no `project` key exists**, run detection first:
 
-For Node.js projects, read `package.json` scripts section to find:
+```bash
+./marathon-ralph/skills/project-detection/scripts/detect.sh <project_dir>
+```
 
-- Test commands: `test`, `test:unit`, `test:integration`, `test:e2e`
-- Lint commands: `lint`, `lint:fix`
-- Type check commands: `typecheck`, `type-check`, `tsc`
+### 2. Use Commands from State
 
-For Python projects, check for:
+From `project.commands`:
 
-- `pytest.ini`, `pyproject.toml` [tool.pytest] section
-- `ruff.toml`, `.ruff.toml`, or pyproject.toml [tool.ruff]
-- `mypy.ini`, `.mypy.ini`, or pyproject.toml [tool.mypy]
+- `test` - Run all tests (e.g., `turbo run test`)
+- `testWorkspace` - Template for workspace tests (replace `{workspace}` with actual name)
+- `lint` - Run linter
+- `typecheck` - Run type checker
+
+For monorepos (`project.monorepo.type` != "none"), prefer workspace-specific commands.
 
 ## Verification Steps
 
@@ -54,19 +65,19 @@ Run each available check. Skip checks that are not configured for the project.
 
 ### 1. Unit Tests
 
-**Node.js:**
+Use the cached test command from `project.commands.test` or `project.commands.testWorkspace`:
 
 ```bash
-# Try common test commands
-npm test 2>&1 || npm run test:unit 2>&1
+# Example for Node.js monorepo (bun + turbo):
+turbo run test 2>&1
+# or workspace-specific:
+bun run --filter=web test 2>&1
+
+# Example for Python (poetry):
+poetry run pytest -v 2>&1
 ```
 
-**Python:**
-
-```bash
-# Run pytest for unit tests
-pytest -v 2>&1 || python -m pytest -v 2>&1
-```
+**Always use the actual command from project state**, not hardcoded commands.
 
 **Expected:** Exit code 0, all tests passing.
 
@@ -74,76 +85,55 @@ pytest -v 2>&1 || python -m pytest -v 2>&1
 
 Check if integration tests exist:
 
-**Node.js:**
-
 - Look for `test:integration` script in package.json
 - Look for `tests/integration/` or `__tests__/integration/` directory
+- Look for pytest markers in Python projects
 
-**Python:**
-
-- Look for `tests/integration/` directory
-- Look for pytest markers: `pytest -m integration`
-
-If found, run them:
+If found, run using the appropriate command from `project.commands`:
 
 ```bash
-npm run test:integration 2>&1
-# or
-pytest -m integration -v 2>&1
+# Use the run command from state with the integration test script
+# e.g., bun run test:integration 2>&1
+# or: poetry run pytest -m integration -v 2>&1
 ```
 
 ### 3. E2E Tests (if present)
 
 Check for E2E test configuration:
 
-**Playwright:**
+- `playwright.config.ts` or `playwright.config.js` - Playwright
+- `cypress.config.ts` or `cypress.config.js` - Cypress
 
-- `playwright.config.ts` or `playwright.config.js`
-- Run: `npx playwright test`
-
-**Cypress:**
-
-- `cypress.config.ts` or `cypress.config.js`
-- Run: `npx cypress run`
-
-If found and configured, run them:
+If found and configured, run using the exec command from `project.commands.exec`:
 
 ```bash
-npx playwright test 2>&1
-# or
-npx cypress run 2>&1
+# Use exec command from state (bunx, pnpm exec, npx, etc.)
+# e.g., bunx playwright test 2>&1
+# or: pnpm exec cypress run 2>&1
 ```
 
 ### 4. Linting
 
-**Node.js:**
+Use the cached lint command from `project.commands.lint`:
 
 ```bash
-npm run lint 2>&1
-```
-
-**Python:**
-
-```bash
-# Try ruff first (faster), then flake8
-ruff check . 2>&1 || flake8 . 2>&1
+# Examples based on project state:
+# Node.js: bun run lint 2>&1
+# Python (poetry): poetry run ruff check . 2>&1
+# Python (pip): ruff check . 2>&1
 ```
 
 **Expected:** Exit code 0, no errors (warnings may be acceptable).
 
 ### 5. Type Checking
 
-**TypeScript:**
+Use the cached typecheck command from `project.commands.typecheck`:
 
 ```bash
-npx tsc --noEmit 2>&1
-```
-
-**Python:**
-
-```bash
-# Try mypy first, then pyright
-mypy . 2>&1 || pyright . 2>&1
+# Examples based on project state:
+# Node.js: bun run check-types 2>&1
+# or with exec: bunx tsc --noEmit 2>&1
+# Python (poetry): poetry run mypy . 2>&1
 ```
 
 **Expected:** Exit code 0, no type errors.
@@ -227,3 +217,36 @@ Return a structured summary that can be parsed by the calling command:
 - Capture full output for debugging but summarize in reports
 - Do not attempt to fix issues - only report them
 - The verification must pass before any new feature work begins
+
+## Circuit Breaker: Command Failures
+
+**CRITICAL: Do NOT retry failing commands indefinitely.**
+
+If a command returns empty output or times out:
+
+1. **First attempt fails** → Check diagnostics:
+   - Read package.json to verify script exists
+   - Check if monorepo and need workspace filter
+   - Verify working directory is correct
+
+2. **Second attempt with corrections** → If still fails:
+   - Try alternative command format
+   - For monorepos: use workspace-specific command
+   - Check for hung processes
+
+3. **Third attempt fails** → STOP and report:
+
+   ```json
+   {
+     "status": "fail",
+     "checks": {
+       "unit_tests": "fail",
+       ...
+     },
+     "ready_for_work": false,
+     "blocking_issue": null,
+     "summary": "Test command failed after 3 attempts. Command: [cmd]. Issue: [empty output/timeout/script not found]"
+   }
+   ```
+
+**Never retry the same exact command more than 3 times.**

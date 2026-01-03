@@ -134,7 +134,7 @@ Object.defineProperty(window, 'matchMedia', {
 
 ### Package.json Scripts
 
-Add test scripts:
+Add test scripts to the **workspace** package.json (where the code lives):
 
 ```json
 {
@@ -145,6 +145,92 @@ Add test scripts:
     "test:coverage": "vitest run --coverage"
   }
 }
+```
+
+## Monorepo Configuration
+
+For monorepo projects (Turborepo, Nx, Lerna, etc.), additional setup is required.
+
+### 1. Check Project State
+
+Read `.claude/marathon-ralph.json` to get the project configuration:
+- `project.monorepo.type` - The monorepo type (turbo, nx, lerna, etc.)
+- `project.packageManager` - The package manager (bun, pnpm, yarn, npm)
+
+### 2. Turborepo Setup
+
+If using Turborepo (`turbo.json` exists), add the test task to the pipeline:
+
+**turbo.json:**
+```json
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": false
+    },
+    "test:run": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": false
+    }
+  }
+}
+```
+
+**Root package.json - add script to run tests across all workspaces:**
+```json
+{
+  "scripts": {
+    "test": "turbo run test",
+    "test:run": "turbo run test:run"
+  }
+}
+```
+
+### 3. pnpm Workspaces Setup
+
+For pnpm workspaces without Turborepo:
+
+**Root package.json:**
+```json
+{
+  "scripts": {
+    "test": "pnpm -r test",
+    "test:run": "pnpm -r test:run"
+  }
+}
+```
+
+### 4. npm/yarn Workspaces Setup
+
+For npm or yarn workspaces:
+
+**Root package.json:**
+```json
+{
+  "scripts": {
+    "test": "npm run test --workspaces",
+    "test:run": "npm run test:run --workspaces"
+  }
+}
+```
+
+### 5. Workspace-Specific Testing
+
+To run tests for a specific workspace, use the package manager's filter:
+
+```bash
+# Turborepo + bun
+bun run --filter=web test
+
+# pnpm
+pnpm --filter web test
+
+# npm workspaces
+npm run test --workspace=web
 ```
 
 ## Writing Tests

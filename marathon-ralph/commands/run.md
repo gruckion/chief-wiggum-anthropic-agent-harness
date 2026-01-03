@@ -241,14 +241,10 @@ Query Linear for the next Todo issue to work on:
 
 **If no issues remain (all done or in other states):**
 
-- Update state file:
+- Update state file using the update-state skill:
 
-  ```json
-  {
-    "active": false,
-    "phase": "complete",
-    ...
-  }
+  ```bash
+  bash "${CLAUDE_PLUGIN_ROOT}/skills/update-state/scripts/update-state.sh" mark-complete
   ```
 
 - Report:
@@ -270,16 +266,10 @@ Query Linear for the next Todo issue to work on:
 **If issue found:**
 
 - Mark the issue as "In Progress" in Linear
-- Update state file with current_issue:
+- Update state file using the update-state skill:
 
-  ```json
-  {
-    "current_issue": {
-      "id": "<issue_id>",
-      "title": "<issue_title>"
-    },
-    "last_updated": "<timestamp>"
-  }
+  ```bash
+  bash "${CLAUDE_PLUGIN_ROOT}/skills/update-state/scripts/update-state.sh" start-issue "<issue_id>" "<issue_title>"
   ```
 
 - Proceed to step 7.3
@@ -357,64 +347,54 @@ Use the Agent tool to run `marathon-qa`:
 
 **If E2E tests pass (or skipped for non-web):**
 
-- Mark the issue as "Done" in Linear
-- Update stats in state file:
+- Proceed to step 7.7 (Exit Agent)
 
-  ```json
-  {
-    "stats": {
-      "completed": <incremented>,
-      "in_progress": 0,
-      "todo": <decremented>
-    }
-  }
-  ```
+#### 7.7: Run Exit Agent
 
-#### 7.7: Update META Issue
+**MANDATORY: Run marathon-exit agent** to complete the issue cycle:
 
-Add a session note to the META issue in Linear:
+Use the Agent tool to run `marathon-exit`:
 
-```markdown
-## Session Update - <timestamp>
+Pass the following context:
 
-### Issue Completed
+- `issue_id`: The Linear issue UUID
+- `issue_identifier`: The issue identifier (e.g., "GRU-220")
+- `issue_title`: The issue title
+- `commits`: List of commits made during this cycle
+- `meta_issue_id`: The META issue ID from state file
 
-- [ISSUE-ID] <title>
+The exit agent will:
 
-### Changes Made
+1. Mark the issue as "Done" in Linear
+2. Update the state file using `update-state` skill (programmatic jq update)
+3. Add a session note to the META issue
+4. Report progress summary
 
-- <commit message summary>
+**DO NOT manually update the state file or Linear issue status.** The exit agent handles this.
 
-### Notes
+#### 7.8: EXIT IMMEDIATELY
 
-- <any relevant notes>
+After the exit agent completes, you MUST EXIT.
+
+```
+╔═══════════════════════════════════════════════════════════════════╗
+║  STOP. DO NOT CONTINUE. EXIT NOW.                                 ║
+║                                                                   ║
+║  The issue cycle is complete. The stop hook will handle the      ║
+║  next issue automatically when you exit.                          ║
+║                                                                   ║
+║  DO NOT:                                                          ║
+║  - Query Linear for the next issue                                ║
+║  - Update the state file (exit agent already did)                 ║
+║  - Loop back to step 7.1                                          ║
+║  - Run any more agents                                            ║
+║  - Take ANY further action                                        ║
+║                                                                   ║
+║  JUST EXIT. The stop hook handles continuation.                   ║
+╚═══════════════════════════════════════════════════════════════════╝
 ```
 
-#### 7.8: Report Progress
-
-```markdown
-Issue Completed: [ISSUE-ID] <title>
-
-Commits:
-- Implementation: <hash>
-- Tests: <hash>
-- E2E: <hash> (or "skipped - not a web project")
-
-Progress: <completed>/<total> issues done
-
-Note: The Stop hook will automatically continue with the next issue.
-```
-
-**Exit - Issue complete.**
-
-CRITICAL: You MUST stop here after completing one issue. Do NOT:
-
-- Continue to the next issue
-- Loop back to step 7.1
-- Query Linear for more issues
-- Take any further action
-
-The Stop hook will intercept your exit and provide continuation instructions.
+The Stop hook will intercept your exit and provide continuation instructions for the next issue.
 
 ## Error Handling
 
@@ -442,15 +422,17 @@ The Stop hook will intercept your exit and provide continuation instructions.
 
 ## State File Updates
 
+**IMPORTANT:** Always use the `update-state` skill for state modifications. Never manually edit the JSON file.
+
 The state file is updated at these points:
 
-- After setup: phase: "setup", spec_file added
-- After init: phase: "coding", linear metadata added
+- After setup: phase: "setup", spec_file added (setup-agent)
+- After init: phase: "coding", linear metadata added (init-agent)
 - **By stop hook:** session_id claimed on first run (ownership)
-- When starting issue: current_issue set, in_progress incremented
-- When completing issue: current_issue cleared, completed incremented
-- When all done: phase: "complete", active: false
-- With `--force`: session_id cleared (releases ownership for takeover)
+- When starting issue: `update-state.sh start-issue` - sets current_issue
+- When completing issue: `update-state.sh complete-issue` - via exit agent
+- When all done: `update-state.sh mark-complete` - sets phase: "complete"
+- With `--force`: `update-state.sh clear-session` - releases ownership
 
 ## Session Scoping
 

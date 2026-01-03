@@ -90,16 +90,15 @@ After implementing all steps:
 
 1. **Run the application:**
 
-   ```bash
-   # Node.js
-   npm run dev 2>&1 | head -20
-   # or
-   npm start 2>&1 | head -20
+   Use the cached dev command from `.claude/marathon-ralph.json` under `project.commands.dev`:
 
-   # Python
-   python main.py 2>&1 | head -20
-   # or
-   python -m <module> 2>&1 | head -20
+   ```bash
+   # Use the dev command from project state
+   # Examples:
+   # Node.js (bun): bun run dev 2>&1 | head -20
+   # Node.js (npm): npm run dev 2>&1 | head -20
+   # Python (pip): pip run python -m <module> 2>&1 | head -20
+   # Python (poetry): poetry run python -m <module> 2>&1 | head -20
    ```
 
 2. **Check for obvious errors:**
