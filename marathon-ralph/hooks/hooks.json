@@ -1,5 +1,5 @@
 {
-  "description": "Marathon Ralph plugin stop hook for continuous autonomous operation",
+  "description": "Marathon Ralph stop hook - claims session ownership and enables continuous autonomous operation",
   "hooks": {
     "Stop": [
       {

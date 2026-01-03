@@ -26,17 +26,37 @@ ACTIVE=$(jq -r '.active // false' "$STATE_FILE" 2>/dev/null || echo "false")
 PHASE=$(jq -r '.phase // "unknown"' "$STATE_FILE" 2>/dev/null || echo "unknown")
 MARATHON_SESSION=$(jq -r '.session_id // empty' "$STATE_FILE" 2>/dev/null || echo "")
 
-# SESSION SCOPING: Only block exit if this session started the marathon
-# Allow exit if: no session_id in marathon (legacy) OR session IDs don't match
-# Block only if: session IDs exist AND match (this session owns the marathon)
-if [ -z "$MARATHON_SESSION" ] || [ "$MARATHON_SESSION" != "$CURRENT_SESSION" ]; then
-  exit 0
-fi
-
 # If not active or phase is complete, allow exit
 if [ "$ACTIVE" != "true" ] || [ "$PHASE" = "complete" ]; then
   exit 0
 fi
+
+# SESSION SCOPING: Determine if this session should own the marathon
+#
+# Case 1: No session_id in state (unclaimed marathon)
+#   → Claim ownership by writing current session_id to state
+#   → Then block exit to continue the marathon
+#
+# Case 2: session_id matches current session
+#   → This session owns the marathon, block exit
+#
+# Case 3: session_id doesn't match (another session owns it)
+#   → Allow exit, this is not our marathon
+
+if [ -z "$MARATHON_SESSION" ]; then
+  # Unclaimed marathon - claim ownership
+  TEMP_FILE="${STATE_FILE}.tmp.$$"
+  if jq --arg sid "$CURRENT_SESSION" '.session_id = $sid' "$STATE_FILE" > "$TEMP_FILE" 2>/dev/null; then
+    mv "$TEMP_FILE" "$STATE_FILE"
+  else
+    rm -f "$TEMP_FILE"
+  fi
+  # Now we own it, continue to blocking logic below
+elif [ "$MARATHON_SESSION" != "$CURRENT_SESSION" ]; then
+  # Another session owns this marathon - allow exit
+  exit 0
+fi
+# else: session_id matches current session - we own it, continue to block
 
 # Check iteration safety limit to prevent infinite loops
 ITERATIONS=$(jq -r '.stop_hook_iterations // 0' "$STATE_FILE" 2>/dev/null || echo "0")

@@ -1,6 +1,6 @@
 ---
 description: Run autonomous marathon development - resume existing or start new from specification
-argument-hint: [--spec-file <path> | <path>] (only required when starting new)
+argument-hint: [--force] [--spec-file <path> | <path>]
 allowed-tools: ["Read", "Write", "Bash", "Glob", "Agent"]
 ---
 
@@ -15,11 +15,12 @@ Run the marathon development system. This command automatically:
 
 $ARGUMENTS
 
-Expected formats (only required when starting new):
+Expected formats:
 
-- `--spec-file <path>`
-- `<path>` (direct path to spec file)
-- No arguments (resume existing marathon)
+- `--spec-file <path>` - Start new marathon with spec file
+- `<path>` - Direct path to spec file (starts new marathon)
+- No arguments - Resume existing marathon
+- `--force` - Force takeover of marathon owned by another session (use when previous session crashed)
 
 ## Process
 
@@ -33,22 +34,57 @@ Use the Read tool to check if `.claude/marathon-ralph.json` exists:
 
 ### Step 2: Handle Based on State
 
+**First, check for `--force` flag in arguments.** This will be used in session ownership checks below.
+
 **If state file EXISTS:**
 
 1. Read `.claude/marathon-ralph.json`
-2. Check the `phase` field:
+2. Check session ownership (applies to coding, setup, and init phases):
+
+   - Read `session_id` from state file
+   - **If no session_id:** Marathon is unclaimed. Proceed normally (stop hook will claim ownership).
+   - **If session_id exists:** Check if another session owns it (we cannot directly compare session IDs in the command, so we check if the marathon appears to be actively running based on context).
+
+3. Check the `phase` field:
 
    - **If phase is "coding":**
-     Report: "Resuming active marathon..."
-     Display current progress (X/Y issues completed)
-     Skip to Step 7 (Coding Loop) - NO spec file needed.
+
+     Check session ownership:
+
+     a) **No session_id in state (unclaimed):**
+        - Report: "Found active marathon (unclaimed). Taking ownership..."
+        - Display current progress (X/Y issues completed)
+        - Skip to Step 7 (Coding Loop)
+
+     b) **session_id exists in state:**
+        - Check if `--force` flag was provided:
+          - **Without `--force`:**
+            Report error and exit:
+
+            ```markdown
+            Marathon owned by another session.
+
+            If the other session is no longer running (crashed/closed), use --force to take over:
+              /marathon-ralph:run --force
+
+            If the other session is still running, you should use that session instead.
+            ```
+
+          - **With `--force`:**
+            Report: "Force takeover requested. Clearing previous session ownership..."
+            Clear session_id from state file (set to null or remove the field)
+            Report: "Taking ownership of marathon..."
+            Display current progress (X/Y issues completed)
+            Skip to Step 7 (Coding Loop)
 
    - **If phase is "setup":**
-     Report: "Resuming marathon from setup phase..."
+     Apply same session ownership check as "coding" phase.
+     If ownership OK: Report "Resuming marathon from setup phase..."
      Skip to Step 5 (Run Init Agent) - spec file already in state.
 
    - **If phase is "init":**
-     Report: "Resuming marathon initialization..."
+     Apply same session ownership check as "coding" phase.
+     If ownership OK: Report "Resuming marathon initialization..."
      Skip to Step 5 (Run Init Agent) - spec file already in state.
 
    - **If phase is "complete":**
@@ -106,20 +142,19 @@ Then run the setup agent:
    Exit - do not proceed.
 
 3. **If setup succeeds:**
-   Update the state file to include the spec file path and session ID:
+   Update the state file to include the spec file path:
 
    ```json
    {
      "active": true,
      "phase": "setup",
      "spec_file": "<absolute_path_to_spec>",
-     "session_id": "<current_session_id>",
      "created_at": "<timestamp>",
      "last_updated": "<timestamp>"
    }
    ```
 
-   **IMPORTANT:** The `session_id` enables session-scoped operation. The Stop hook only blocks exit for the session that started the marathon. Other sessions working in the same directory will not be affected.
+   **Note:** The `session_id` is NOT set here. The Stop hook will automatically claim ownership by writing the session_id when it first runs. This ensures the session that actually runs the marathon owns it.
 
 ### Step 5: Run Init Agent
 
@@ -367,11 +402,19 @@ Commits:
 
 Progress: <completed>/<total> issues done
 
-Note: Run /marathon-ralph:run again to continue with the next issue,
-or the Stop hook will continue automatically.
+Note: The Stop hook will automatically continue with the next issue.
 ```
 
-**Note:** Currently the loop stops after ONE issue. The Stop hook enables automatic continuation.
+**Exit - Issue complete.**
+
+CRITICAL: You MUST stop here after completing one issue. Do NOT:
+
+- Continue to the next issue
+- Loop back to step 7.1
+- Query Linear for more issues
+- Take any further action
+
+The Stop hook will intercept your exit and provide continuation instructions.
 
 ## Error Handling
 
@@ -387,32 +430,45 @@ or the Stop hook will continue automatically.
 
 ## Resume Behavior
 
-| Current Phase | Action                                                         | Spec Required? |
-| ------------- | -------------------------------------------------------------- | -------------- |
-| coding        | Resume coding loop (verify -> get issue -> plan -> code -> test -> qa) | No             |
-| setup         | Re-run init-agent, then coding loop                            | No (in state)  |
-| init          | Re-run init-agent, then coding loop                            | No (in state)  |
-| complete      | Ask to start new marathon                                      | Yes            |
-| (no state)    | Start fresh marathon                                           | Yes            |
+| Current Phase | Session Ownership | Action | Spec Required? |
+| ------------- | ----------------- | ------ | -------------- |
+| coding | No session_id (unclaimed) | Resume, stop hook claims ownership | No |
+| coding | Has session_id | Refuse (use `--force` to take over) | No |
+| coding | Has session_id + `--force` | Clear session_id, resume | No |
+| setup | (same as coding) | Re-run init-agent, then coding loop | No (in state) |
+| init | (same as coding) | Re-run init-agent, then coding loop | No (in state) |
+| complete | N/A | Ask to start new marathon | Yes |
+| (no state) | N/A | Start fresh marathon | Yes |
 
 ## State File Updates
 
 The state file is updated at these points:
 
-- After setup: phase: "setup", spec_file added, session_id added
+- After setup: phase: "setup", spec_file added
 - After init: phase: "coding", linear metadata added
+- **By stop hook:** session_id claimed on first run (ownership)
 - When starting issue: current_issue set, in_progress incremented
 - When completing issue: current_issue cleared, completed incremented
 - When all done: phase: "complete", active: false
+- With `--force`: session_id cleared (releases ownership for takeover)
 
 ## Session Scoping
 
 The `session_id` field in the state file enables session-scoped marathons:
 
-- When a marathon starts, the current session's ID is stored in the state file
-- The Stop hook only blocks exit for the session that started the marathon
+- The Stop hook automatically claims ownership by writing `session_id` when it first runs on an unclaimed marathon
+- The Stop hook only blocks exit for the session that owns the marathon
 - Other Claude sessions working in the same directory are NOT affected
-- This prevents cross-session interference when running multiple sessions
+- If session_id exists and doesn't match, the command refuses to proceed (prevents hijacking active marathons)
+- Use `--force` to take over a marathon from a crashed/closed session
+
+### Ownership Flow
+
+1. **New marathon started:** State created without session_id
+2. **Stop hook runs:** Sees no session_id → claims ownership by writing current session_id
+3. **Subsequent stop hooks:** Session_id matches → blocks exit, marathon continues
+4. **Different session tries to resume:** Sees session_id → refuses without `--force`
+5. **With `--force`:** Clears session_id → stop hook claims new session → marathon transfers
 
 ## Notes
 
