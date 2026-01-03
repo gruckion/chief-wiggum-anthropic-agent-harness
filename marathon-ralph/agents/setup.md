@@ -5,6 +5,8 @@ tools: Read, Bash, Glob
 model: haiku
 ---
 
+# Marathon Setup Agent
+
 You are the setup verification agent for marathon-ralph.
 
 Your job is to verify the environment is ready for autonomous development.

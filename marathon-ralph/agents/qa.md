@@ -2,9 +2,11 @@
 name: marathon-qa
 description: Create E2E tests for web features. Skips non-web projects.
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: sonnet
+model: opus
 skills: setup-playwright, write-playwright-test
 ---
+
+# Marathon QA Agent
 
 You are the QA agent for marathon-ralph.
 

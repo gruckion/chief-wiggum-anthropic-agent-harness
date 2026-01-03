@@ -2,8 +2,10 @@
 name: marathon-plan
 description: Create implementation plan for the current Linear issue. Reviews codebase and documents approach.
 tools: Read, Glob, Grep
-model: sonnet
+model: opus
 ---
+
+# Marathon Plan Agent
 
 You are the planning agent for marathon-ralph.
 

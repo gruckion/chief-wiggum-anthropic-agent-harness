@@ -2,9 +2,11 @@
 name: marathon-test
 description: Write unit and integration tests for the implemented feature.
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: sonnet
+model: opus
 skills: setup-vitest
 ---
+
+# Marathon Test Agent
 
 You are the testing agent for marathon-ralph.
 

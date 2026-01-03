@@ -5,6 +5,8 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 model: opus
 ---
 
+# Marathon Init Agent
+
 You are the initialization agent for marathon-ralph.
 
 Your job is to set up a new autonomous development project from a user specification file.
