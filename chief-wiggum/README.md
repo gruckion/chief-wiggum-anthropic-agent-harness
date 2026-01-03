@@ -11,6 +11,7 @@ This fork exists for two reasons:
 ### 1. Bug Fixes
 
 Includes fixes from [PR #12642](https://github.com/anthropics/claude-code/pull/12642):
+
 - Slash commands failed due to multi-line bash being blocked by security checks
 - Permission check bug with ` ```! ` auto-execute syntax
 
@@ -66,6 +67,7 @@ Start a loop in your current session.
 ```
 
 **Options:**
+
 - `--completion-promise <text>` - Phrase that signals completion (HIGHLY ENCOURAGED)
 - `--max-iterations <n>` - Stop after N iterations (HIGHLY ENCOURAGED, recommend 10-20)
 
@@ -114,12 +116,14 @@ Always specify both `--completion-promise` and `--max-iterations` (recommend 10-
 ## When to Use
 
 **Good for:**
+
 - Well-defined tasks with clear success criteria
 - Tasks requiring iteration (getting tests to pass)
 - Greenfield projects
 - Tasks with automatic verification (tests, linters)
 
 **Not good for:**
+
 - Tasks requiring human judgment
 - One-shot operations
 - Unclear success criteria
@@ -127,5 +131,5 @@ Always specify both `--completion-promise` and `--max-iterations` (recommend 10-
 ## Learn More
 
 - Original plugin: [ralph-wiggum](https://github.com/anthropics/claude-code-plugins/tree/main/plugins/ralph-wiggum) (Anthropic's official version)
-- Original technique: https://ghuntley.com/ralph/
-- Ralph Orchestrator: https://github.com/mikeyobrien/ralph-orchestrator
+- Original technique: <https://ghuntley.com/ralph/>
+- Ralph Orchestrator: <https://github.com/mikeyobrien/ralph-orchestrator>
